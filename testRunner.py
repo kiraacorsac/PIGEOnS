@@ -11,13 +11,13 @@ class TestsResult:
 
 class ShowResultsOperator(bpy.types.Operator):
     bl_idname = "myaddon.show_results"
-    bl_label = "Operation Results"
+    bl_label = "Details"
     
     message: bpy.props.StringProperty()
     
     def invoke(self, context, event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=400)
+        return wm.invoke_props_dialog(self, width=200)
     
     def draw(self, context):
         self.layout.label(text=self.message)

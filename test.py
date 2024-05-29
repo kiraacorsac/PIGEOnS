@@ -2,7 +2,7 @@ import traceback
 import bpy
 from enum import Enum
 from bpy.types import Operator
-
+from .testVisualisation import selectPolygon
 
 
 
@@ -17,6 +17,7 @@ TEST_REGISTRY = {#{hw_id:[test1,test2,...]}
     1:[],
     2:[],
     3:[],
+    4:[],
 } 
 #TRACEBACKS = []
 
@@ -24,6 +25,10 @@ class FailedInfo:
     dataBlock : bpy.props.StringProperty()
     name : bpy.props.StringProperty()
     message : bpy.props.StringProperty()
+
+class VisData:
+    method = None
+    data = None
 
 class TEST_STATE(Enum):
     INIT = 0
@@ -37,9 +42,10 @@ class Test:
     label = ""
     state = TEST_STATE.INIT
     message = ""
-    failedInfo : FailedInfo
+    failedInfo : FailedInfo #TODO: initialize implicit
     homeworks = []
     traceback = ""
+    visData = None
     def is_applicable(self,context):
         print("is_applicable")
     def execute(self,context):
@@ -90,16 +96,13 @@ class OneObjectTest(Test):
         numberOfObjects = len(sceneObjects)
         try:
             if(numberOfObjects==1):
-                self.setMessage("There is only 1 object!")
 
-                print(self.state)
                 self.state = TEST_STATE.PASSED
-                print(self.state)
+
             else:
-                self.setMessage("There is not only 1 object!")
                 self.state = TEST_STATE.FAILED
         except:
-            self.setMessage("Something is wrong! Test skipped!")
+            self.traceback = traceback.format_exc()
             self.state = TEST_STATE.BROKEN
 
 
@@ -111,29 +114,137 @@ class TwoObjectTest(Test):
         return True
 
     def execute(self,context):
-        print("TwoObject Test - execute")
         scene = context.scene
         cursor = scene.cursor.location
         sceneObjects = scene.objects
         numberOfObjects = len(sceneObjects)
         try:
             if(numberOfObjects==2):
-                self.setMessage("There are only 2 objects!")
                 print(self.state)
                 self.state = TEST_STATE.PASSED
                 print(self.state)
             else:
-                self.setMessage("There is not only 2 objects!")
                 self.state = TEST_STATE.FAILED
         except:
-            self.setMessage("Something is wrong! Test skipped!")
+            self.traceback = traceback.format_exc()
             self.state = TEST_STATE.BROKEN
             
 
 @register_test
+class NoDefaultNameTest(Test):
+    label = "No Default Name Test"
+    homeworks = [1,3,4]
+    def is_applicable(self,context):
+        return True
+
+    def execute(self,context):
+        scene = context.scene
+        cursor = scene.cursor.location
+        sceneObjects = scene.objects
+        numberOfObjects = len(sceneObjects)
+        try:
+            failMessage = "Please remove default names:\n"
+            defaultNames = [] 
+            for obj in bpy.data.objects:
+                if(obj.name[0:4] == "Cube"):
+                    defaultNames.append(obj.name)
+                
+
+            if(defaultNames == []):
+                self.state = TEST_STATE.PASSED
+            else:
+                for name in defaultNames:
+                    failMessage=failMessage+name+"\n"
+                self.setFailedInfo("","",failMessage)
+                self.state = TEST_STATE.FAILED
+
+        except:
+            self.traceback = traceback.format_exc()
+            self.state = TEST_STATE.BROKEN
+
+@register_test
+class MaterialSetTest(Test):
+    label = "Material Set Test"
+    homeworks = [1,3,4]
+    def is_applicable(self,context):
+        return True
+
+    def execute(self,context):
+        scene = context.scene
+        cursor = scene.cursor.location
+        sceneObjects = scene.objects
+        numberOfObjects = len(sceneObjects)
+        try:
+            failMessage = "These objects are missing materials:\n"
+            objectsMissingMaterials = [] 
+            for obj in bpy.data.objects:
+                if obj.type == 'MESH':
+                    current_mode = bpy.context.object.mode
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    for poly in obj.data.polygons:
+                        if poly.material_index >= len(obj.material_slots) or obj.material_slots[poly.material_index].material is None:
+                            if obj not in objectsMissingMaterials: 
+                                objectsMissingMaterials.append(obj)      
+                    bpy.ops.object.mode_set(mode=current_mode)
+
+            if(objectsMissingMaterials == []):
+                self.state = TEST_STATE.PASSED
+            else:
+                for obj in objectsMissingMaterials:
+                    failMessage = failMessage+obj.name+"\n"
+                self.setFailedInfo("","",failMessage)
+                self.state = TEST_STATE.FAILED
+
+        except:
+            self.traceback = traceback.format_exc()
+            self.state = TEST_STATE.BROKEN
+
+@register_test
+class NoTrisTest(Test):
+    label = "No Tris Test"
+    homeworks = [1,3,4]
+    def is_applicable(self,context):
+        return True
+
+    def execute(self,context):
+        scene = context.scene
+        cursor = scene.cursor.location
+        sceneObjects = scene.objects
+        numberOfObjects = len(sceneObjects)
+        try:
+            failMessage = "These objects have triangles:\n"
+            objectsWithTriangles = [] 
+            for obj in bpy.data.objects:
+                if obj.type == 'MESH':
+                    current_mode = bpy.context.object.mode
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    for poly in obj.data.polygons:
+                        if len(poly.vertices) == 3:
+                             
+                             if obj not in objectsWithTriangles: 
+                                objectsWithTriangles.append(obj)  
+                                v = VisData()
+                                v.method = 0
+                                v.data = poly.index
+                                self.visData = v
+                    bpy.ops.object.mode_set(mode=current_mode)
+
+            if(objectsWithTriangles == []):
+                self.state = TEST_STATE.PASSED
+            else:
+                for obj in objectsWithTriangles:
+                    failMessage = failMessage+obj.name+"\n"
+                self.setFailedInfo("","",failMessage)
+                self.state = TEST_STATE.FAILED
+
+        except:
+            self.traceback = traceback.format_exc()
+            self.state = TEST_STATE.BROKEN
+
+@register_test
 class BrokenTest(Test):
     label = "Broken Test"
-    homeworks = [2,3]
+    homeworks = [2,3,4]
     def is_applicable(self,context):
         return True
 
@@ -147,8 +258,7 @@ class BrokenTest(Test):
             scene.objects["NonExistingCube"].active = True
             self.state = TEST_STATE.PASSED
 
-        except:
-            self.setMessage("Something is wrong! Test skipped!")
+        except:          
             self.state = TEST_STATE.BROKEN
             #TRACEBACKS[self.testId] = traceback.format_exc()
             self.traceback = traceback.format_exc()

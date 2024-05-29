@@ -13,11 +13,13 @@ bl_info = {
 
 import os
 import bpy
-from .test import OneObjectTest,TwoObjectTest,TEST_REGISTRY
-from .ui import RunTestsPanel, create_traceback_operator,create_show_details_operator, MyProperties
-from .testRunner import TestRunnerOperator,ShowResultsOperator,showInfos
 
+from .test import OneObjectTest,TwoObjectTest,TEST_REGISTRY
+from .ui import RunTestsPanel, create_traceback_operator,create_show_details_operator,create_visualisation_operator, MyProperties
+from .testRunner import TestRunnerOperator,ShowResultsOperator,showInfos
+from .utils import loadImages
 from bpy.utils import register_class, unregister_class
+
 
 _classes = [
     MyProperties,
@@ -30,6 +32,8 @@ _dynamicOperators = []
 def register():
     #tests.append(OneObjectTest())
     #tests.append(TwoObjectTest())
+    loadImages()
+
     for cls in _classes:
         register_class(cls)
 
@@ -40,6 +44,9 @@ def register():
             register_class(dymOp)
             _dynamicOperators.append(dymOp)
             dymOp = create_show_details_operator(hw_id,i)
+            register_class(dymOp)
+            _dynamicOperators.append(dymOp)
+            dymOp = create_visualisation_operator(hw_id,i)
             register_class(dymOp)
             _dynamicOperators.append(dymOp)
             showInfos.append(False)
@@ -54,8 +61,8 @@ def unregister():
 
     for cls in _classes:
         unregister_class(cls)
-    for dymOp in _dynamicOperators:
-        unregister_class(dymOp)    
+    #for dymOp in _dynamicOperators:
+    #    unregister_class(dymOp)    
     #for i in range(len(TEST_REGISTRY)):
         #unregister_ope(create_operator(i))
         #register_class(create_traceback_operator(i))
