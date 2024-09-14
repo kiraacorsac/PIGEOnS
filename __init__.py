@@ -17,7 +17,7 @@ import bpy
 from .test import TEST_REGISTRY
 from .ui import RunTestsPanel, create_traceback_operator,create_show_details_operator,create_visualisation_operator, MyProperties
 from .testRunner import TestRunnerOperator,ShowResultsOperator,showInfos
-from .utils import loadImages
+from . import utils
 from bpy.utils import register_class, unregister_class
 from bpy.props import BoolProperty, PointerProperty
 from bpy.app.handlers import persistent
@@ -38,10 +38,6 @@ from os.path import isfile, join
 custom_icons = None
 list_raw = []
 img = None
-
-@persistent
-def load_images_handler(dummy):
-    loadImages()
 
 def register():
     #tests.append(OneObjectTest())
@@ -66,7 +62,8 @@ def register():
             showInfos.append(False)
     print(TEST_REGISTRY)
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(type=MyProperties)
-    bpy.app.handlers.load_post.append(load_images_handler)
+    utils.loadImages()
+    # bpy.app.handlers.load_post.append(load_images_handler)
     #bpy.types.Scene.my_properties = PointerProperty(type=MyProperties)
     #bpy.types.Scene.my_prop = bpy.props.IntProperty(update=update_func)
 
