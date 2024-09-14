@@ -21,10 +21,9 @@ pigeon_collection = bpy.utils.previews.new()
 def loadImages():
     pigeon_names = ["hello", "ok", "warn", "error", "crash", "brb"]
     image_format = ".png"
-    pigeon_directory = pathlib.Path(os.getcwd()) / "imgs"
     relative_dir = pathlib.Path(os.path.dirname(__file__)) / "imgs"
     
     for pigeon in pigeon_names:
         pigoen_filename = f"{pigeon}{image_format}"
-        pigeon_collection.load(pigeon, str(relative_dir/pigoen_filename), 'IMAGE')
+        pigeon_collection.load(pigeon.upper(), str(relative_dir/pigoen_filename), 'IMAGE')
     

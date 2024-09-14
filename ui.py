@@ -1,7 +1,7 @@
 import bpy
-from .test import TEST_REGISTRY,TEST_STATE,resetTests,VisData
+from . import tests
+from . import testRunner
 from . import utils
-from .testRunner import TestRunnerOperator,showInfos,NEED_UPDATE
 from .testVisualisation import selectPolygon,VIS_TYPE
 icons = ["ANTIALIASED","CHECKBOX_HLT","QUESTION","CANCEL","PLUGIN"]
 
@@ -9,8 +9,8 @@ icons = ["ANTIALIASED","CHECKBOX_HLT","QUESTION","CANCEL","PLUGIN"]
 
 class MyProperties(bpy.types.PropertyGroup):
     def onChange(self,context):
-        resetTests()
-
+        testRunner.resetTestResults()
+        tests.resetTests()
 
     homework_selector : bpy.props.EnumProperty(
         name="",
@@ -39,7 +39,6 @@ def create_visualisation_operator(hw_id,op_id):
         bl_label = "Visual OP"
         
         methodID: bpy.props.IntProperty()
-        #dataID: bpy.props.IntProperty()
         objectName: bpy.props.StringProperty()
         dataID: bpy.props.IntProperty()
         
@@ -70,6 +69,7 @@ def create_show_details_operator(hw_id,op_id):
        
         def execute(self, context):
             return {'FINISHED'}
+        
     return ShowDetailsOperator
 
 def create_traceback_operator(hw_id,op_id): #TODO: test id should be here
@@ -79,12 +79,12 @@ def create_traceback_operator(hw_id,op_id): #TODO: test id should be here
         myId = op_id
         hwId = hw_id
         def execute(self, context):
-            homework = TEST_REGISTRY[self.hwId]
+            homework = testRunner.TEST_REGISTRY[self.hwId]
             utils.copy_to_clipboard(homework[self.myId].traceback)
             return {'FINISHED'}
         @classmethod
         def description(self, context, properties):
-            homework = TEST_REGISTRY[self.hwId]
+            homework = testRunner.TEST_REGISTRY[self.hwId]
             return homework[self.myId].traceback
 
     return TracebackOperator
@@ -96,12 +96,7 @@ class RunTestsPanel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_tests"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "TESTS"
-    areImagesLoaded = True
-    
-  
-    
-
+    bl_category = "PIGEO'n'S"
         
     def draw(self, context):
         layout = self.layout 
@@ -114,26 +109,26 @@ class RunTestsPanel(bpy.types.Panel):
         hw_id_string = context.scene.my_tool.homework_selector
         hw_id = int(hw_id_string[2:])
         
-        currentTests = TEST_REGISTRY[hw_id]
+        currentTests = tests.TEST_REGISTRY[hw_id]
         
         for i in range(len(currentTests)):
             test = currentTests[i]
             row = layout.row()
 
-            if(test.state == TEST_STATE.FAILED or test.state == TEST_STATE.BROKEN):
+            if(test.state not in {tests.TestState.OK, tests.TestState.INIT}):
                 row.alert = True
 
             col1 = row.column()
             col1.scale_x = 7
             
             col1.label(text=test.label, icon=icons[test.state.value])
-            if(showInfos[i]):
+            if(testRunner.showInfos[i]):
                 col1.label(text=test.message)
             col2 = row.column()
             col2.scale_x = 1
-            if(test.state == TEST_STATE.BROKEN):
+            if(test.state == tests.TestState.CRASH):
                 col2.operator(f"object.traceback_operator_{hw_id}_{i}",text="",icon='COPYDOWN')
-            if(test.state == TEST_STATE.FAILED):
+            if(test.state == tests.TestState.ERROR):
                 if(test.visType != VIS_TYPE.NONE):
                     visualisation_operator = col2.operator(f"object.visualisation_operator_{hw_id}_{i}",text="",icon='OUTLINER_OB_LIGHT')
                     visualisation_operator.objectName = test.visData.objectName
@@ -147,22 +142,21 @@ class RunTestsPanel(bpy.types.Panel):
                 
 
         row = layout.row()   
-        testsOp = row.operator(TestRunnerOperator.bl_idname,text="Run Tests")
+        testsOp = row.operator(testRunner.TestRunnerOperator.bl_idname,text="Run Tests")
         testsOp.current_hw=hw_id
 
         imgCol = self.layout.box().column()
-        pigeon = "hello"
-        if "test_results" in bpy.context.scene:
-            # TODO: Replace results array with dictionary or make it into multiple props or something that does not requirte knowing what array num is what
-            results = bpy.context.scene["test_results"]
-            if(results[1] > 0): #Warning
-                pigeon = "warn" #imgCol.template_preview(bpy.data.textures['okPigeon'],show_buttons=False)
-            if(results[2] > 0): #Error
-                pigeon = "error"
-            if(results[3] > 0): #Crash/Broken
-                pigeon = "crash"
-            if(results[0] == len(currentTests)):
-                pigeon = "ok" #imgCol.template_preview(bpy.data.textures['errorPigeon'],show_buttons=False)
+        pigeon = "HELLO"        
+        if testRunner.TEST_RESULTS_PROPERTY in bpy.context.scene:
+            results = bpy.context.scene[testRunner.TEST_RESULTS_PROPERTY]
+            if(results[tests.TestState.WARNING.value] > 0):
+                pigeon = tests.TestState.WARNING.name
+            if(results[tests.TestState.ERROR.value] > 0):
+                pigeon = tests.TestState.ERROR.name
+            if(results[tests.TestState.CRASH.value] > 0):
+                pigeon = tests.TestState.CRASH.name
+            if(results[tests.TestState.OK.value] == len(currentTests)):
+                pigeon = tests.TestState.OK.name
         imgCol.label
         imgCol.template_icon(utils.pigeon_collection[pigeon].icon_id,scale=8)
         context.area.tag_redraw()

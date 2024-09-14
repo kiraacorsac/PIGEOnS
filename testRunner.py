@@ -1,14 +1,15 @@
 import bpy
 
-from .test import TEST_REGISTRY
+from . import tests
 showInfos = []
+TEST_RESULTS_PROPERTY = "pigeons_test_results"
 
-NEED_UPDATE = True
+def resetTestResults():
+    possible_state_count = len(tests.TestState._member_names_)
+    tests_results = [0 for _ in range(possible_state_count)]
+    bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
+    return tests_results
 
-class TestsResult:
-    results = [0,0,0,0]
-
-TEST_RESULTS = TestsResult()
 
 class ShowResultsOperator(bpy.types.Operator):
     bl_idname = "myaddon.show_results"
@@ -37,25 +38,16 @@ class TestRunnerOperator(bpy.types.Operator):
 
 
     def execute(self, context):
-        #TEST_RESULT = [0,0,0]
-        testsResult = TestsResult()
-        testsResult.results = [0,0,0,0] #passed, warning, failed, crashed
-        print("TestRunner - Running")
-        #print(len(TEST_REGISTRY))
-        currentTests = TEST_REGISTRY[self.current_hw]
+        currentTests = tests.TEST_REGISTRY[self.current_hw]
+        tests_results = resetTestResults()
 
         for i in range(len(currentTests)):
             currentTests[i].execute(context)
-            testsResult.results[currentTests[i].state.value-1] += 1
+            tests_results[currentTests[i].state.value] += 1
 
-        result_message = f"Results: P:{testsResult.results[0]}\n W:{testsResult.results[1]}\n F:{testsResult.results[2]}\n B:{testsResult.results[3]}\n"
-        bpy.context.scene["test_results"] = testsResult.results
+        bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
         my_props = context.scene.my_tool
         context.scene.my_tool.updater = not my_props.updater
-        print("TEST RUNNER RESULTS")
-        print(bpy.context.scene["test_results"])
-        # Call the results dialog operator
-        bpy.ops.myaddon.show_results('INVOKE_DEFAULT',message=result_message)
         return {'FINISHED'}
     
 

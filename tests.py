@@ -12,6 +12,7 @@ def resetTests():
     for hw, tests in TEST_REGISTRY.items():
         for test in tests:
             test.reset()
+    
 
 TEST_REGISTRY = {#{hw_id:[test1,test2,...]}
     1:[],
@@ -31,17 +32,17 @@ class VisData:
     objectName = ''
     dataID = None
 
-class TEST_STATE(Enum):
+class TestState(Enum):
     INIT = 0
-    PASSED = 1
+    OK = 1
     WARNING = 2
-    FAILED = 3
-    BROKEN = 4
+    ERROR = 3
+    CRASH = 4
 
 class Test:
     testId = 0
     label = ""
-    state = TEST_STATE.INIT
+    state = TestState.INIT
     failedMessage = ""
     failedInfo : FailedInfo #TODO: initialize implicit
     homeworks = []
@@ -64,7 +65,7 @@ class Test:
         self.failedMessage = self.failedMessage+"\n"+objectName
 
     def reset(self):
-        self.state = TEST_STATE.INIT
+        self.state = TestState.INIT
         self.failedMessage = ""
         self.failedInfo : FailedInfo
         self.traceback = ""
@@ -114,15 +115,15 @@ class NoDefaultNameTest(Test):
                 
 
             if(defaultNames == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for name in defaultNames:
                     self.addObjectNameToMessage(name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class MaterialSetTest(Test):
@@ -148,15 +149,15 @@ class MaterialSetTest(Test):
                     bpy.ops.object.mode_set(mode=current_mode)
 
             if(objectsMissingMaterials == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objectsMissingMaterials:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class NoTrisTest(Test):
@@ -182,15 +183,15 @@ class NoTrisTest(Test):
                     bpy.ops.object.mode_set(mode=current_mode)
 
             if(objectsWithTriangles == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objectsWithTriangles:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class BrokenTest(Test):
@@ -207,10 +208,10 @@ class BrokenTest(Test):
         numberOfObjects = len(sceneObjects)
         try:
             scene.objects["NonExistingCube"].active = True
-            self.setState(TEST_STATE.PASSED)
+            self.setState(TestState.OK)
 
         except:          
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
             #TRACEBACKS[self.testId] = traceback.format_exc()
             self.traceback = traceback.format_exc()
             
@@ -233,15 +234,15 @@ class NoCrazySubdivision(Test):
                         objectsWithHighSubdivision.append(obj)
 
             if(objectsWithHighSubdivision == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objectsWithHighSubdivision:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.WARNING)
+                self.setState(TestState.WARNING)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class RenderSubdivisionNotLessThenViewport(Test):
@@ -261,15 +262,15 @@ class RenderSubdivisionNotLessThenViewport(Test):
                         objects.append(obj)
 
             if(objects == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objects:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class DiffuseImageMapIsRGB(Test):
@@ -293,15 +294,15 @@ class DiffuseImageMapIsRGB(Test):
                                     objects.append(material.name)
 
             if(objects == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objects:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class NoInappropriateMetallness(Test):
@@ -323,15 +324,15 @@ class NoInappropriateMetallness(Test):
                                 objects.append(material)
 
             if(objects == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objects:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.WARNING)
+                self.setState(TestState.WARNING)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 
 @register_test
@@ -352,15 +353,15 @@ class NoFlatShading(Test):
                         objects.append(obj)
 
             if(objects == []):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 for obj in objects:
                     self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 @register_test
 class NoSingleObject(Test): #object or mesh???
@@ -376,15 +377,15 @@ class NoSingleObject(Test): #object or mesh???
             nObjects = len(bpy.context.scene.objects)
 
             if(nObjects > 1):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
                 #for obj in objects:
                 #    self.addObjectNameToMessage(obj.name)
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)
 
 
 @register_test
@@ -401,10 +402,10 @@ class ReferencesPresentTest(Test): #object or mesh???
             nObjects = len(bpy.context.scene.objects)
 
             if(nObjects > 1):
-                self.setState(TEST_STATE.PASSED)
+                self.setState(TestState.OK)
             else:
-                self.setState(TEST_STATE.FAILED)
+                self.setState(TestState.ERROR)
 
         except:
             self.traceback = traceback.format_exc()
-            self.setState(TEST_STATE.BROKEN)
+            self.setState(TestState.CRASH)

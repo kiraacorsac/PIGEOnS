@@ -14,7 +14,7 @@ bl_info = {
 import os
 import bpy
 
-from .test import TEST_REGISTRY
+from .tests import TEST_REGISTRY
 from .ui import RunTestsPanel, create_traceback_operator,create_show_details_operator,create_visualisation_operator, MyProperties
 from .testRunner import TestRunnerOperator,ShowResultsOperator,showInfos
 from . import utils
