@@ -1,30 +1,40 @@
-import traceback
+import typing
 import bpy
 from enum import Enum
-from bpy.types import Operator
 from .testVisualisation import selectPolygon,VIS_TYPE
 
-
-
-
-
 def resetTests():
-    for hw, tests in TEST_REGISTRY.items():
+    for _, tests in TEST_REGISTRY.items():
         for test in tests:
             test.reset()
+
+class HomeworkBatteryInfo:
+    def __init__(self, homework_battery_label: str):
+        self._id = homework_battery_label.replace(" ", "").replace("-", "").lower()
+        self._label = homework_battery_label
     
 
-TEST_REGISTRY = {#{hw_id:[test1,test2,...]}
-    1:[],
-    2:[],
-    3:[],
-    4:[],
-} 
-#TRACEBACKS = []
+class HomeworkBatteries:
+    HW1 = HomeworkBatteryInfo("Homework 1")
+    HW2 = HomeworkBatteryInfo("Homework 2")
+    HW3 = HomeworkBatteryInfo("Homework 3")
+    HW4 = HomeworkBatteryInfo("Homework 4")
+    HW5 = HomeworkBatteryInfo("Homework 5")
+    HW6 = HomeworkBatteryInfo("Homework 6")
+    HW7 = HomeworkBatteryInfo("Homework 7")
+    Showcase_OK = HomeworkBatteryInfo("Showcase - OK")
+    Showcase_warning = HomeworkBatteryInfo("Showcase - Warning")
+    Showcase_error = HomeworkBatteryInfo("Showcase - Error")
+    Showcase_crash = HomeworkBatteryInfo("Showcase - Crash")
+    
+def get_all_batteries():
+    return [getattr(HomeworkBatteries, hw_key) for hw_key in dir(HomeworkBatteries) if not hw_key.startswith("_")]
+
+TEST_REGISTRY = {}
+
 
 class FailedInfo:
     dataBlock : bpy.props.StringProperty()
-    name : bpy.props.StringProperty()
     message : bpy.props.StringProperty()
 
 class VisData:
@@ -44,21 +54,22 @@ class Test:
     label = ""
     state = TestState.INIT
     failedMessage = ""
-    failedInfo : FailedInfo #TODO: initialize implicit
+    failedInfo : typing.Optional[FailedInfo] = None
     homeworks = []
     traceback = ""
     visData = None
     visType = VIS_TYPE.NONE
     objects = []
-    def is_applicable(self,context):
-        print("is_applicable")
-    def execute(self,context):
-        print("execute")
 
-    def setFailedInfo(self,_dataBlock,_name,_message):
+    def is_applicable(self,context):
+        return True
+    
+    def execute(self,context):
+        pass
+
+    def setFailedInfo(self,_dataBlock,_message):
         self.failedInfo = FailedInfo()
         self.failedInfo.dataBlock = _dataBlock
-        self.failedInfo.name = _name
         self.failedInfo.message = _message
 
     def addObjectNameToMessage(self,objectName):
@@ -81,331 +92,64 @@ class Test:
         self.state = state
     
 def register_test(test: Test):
-    #global TRACEBACKS
     testInst = test()
-    #testInst.testId = len(TRACEBACKS)
-    for hw_id in testInst.homeworks:
+    for hw_battery in testInst.homeworks:
         global TEST_REGISTRY
-        #TEST_REGISTRY.append(testInst)
-        if hw_id in TEST_REGISTRY:
-            TEST_REGISTRY[hw_id].append(testInst)
-        else:
-            TEST_REGISTRY[hw_id] = []
-            TEST_REGISTRY[hw_id].append(testInst)
+        if hw_battery._id not in TEST_REGISTRY:
+            TEST_REGISTRY[hw_battery._id] = []
+        if testInst in TEST_REGISTRY[hw_battery._id]:
+            continue
+        TEST_REGISTRY[hw_battery._id].append(testInst)
 
-    #TRACEBACKS.append("")
     return testInst  
 
-           
+@register_test
+class OK_Test(Test):
+    label = "This test always passes"
+    failedMessage = "You shouldn't ever see this message"
+    homeworks = [HomeworkBatteries.Showcase_OK]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+               
 
 @register_test
-class NoDefaultNameTest(Test):
-    label = "No Default Name Test"
-    homeworks = [1,3,4]
-    failedMessage = "Please remove default names:"
-    def is_applicable(self,context):
-        return True
+class Warning_Test(Test):
+    label = "This test always ends up as warning"
+    homeworks = [HomeworkBatteries.Showcase_warning]
 
-    def execute(self,context):
-        try:
-            defaultNames = [] 
-            for obj in bpy.data.objects:
-                if(obj.name[0:4] == "Cube"): #TODO: add Plane, Circle etc.
-                    defaultNames.append(obj.name)
-                
-
-            if(defaultNames == []):
-                self.setState(TestState.OK)
-            else:
-                for name in defaultNames:
-                    self.addObjectNameToMessage(name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
+    def execute(self, context):
+        self.setState(TestState.WARNING)
+        self.setFailedInfo(
+            None, 
+            f"Warning!\n\n" 
+            f"Something may be incorrect, but we can't really tell with automatic test - maybe it's OK?\n" 
+            f"Better make sure, unless you have a very good reason, we will make you redo this homework."
+        )
 
 @register_test
-class MaterialSetTest(Test):
-    label = "Material Set Test"
-    failedMessage = "These objects are missing materials:"
-    homeworks = [1,3,4]
-    visType = VIS_TYPE.POLYGON
-    def is_applicable(self,context):
-        return True
+class Error_Test(Test):
+    label = "This test always ends up as error"
+    homeworks = [HomeworkBatteries.Showcase_error]
 
-    def execute(self,context):
-        try:
-            objectsMissingMaterials = [] 
-            for obj in bpy.data.objects:
-                if obj.type == 'MESH':
-                    current_mode = bpy.context.object.mode
-                    bpy.ops.object.mode_set(mode='OBJECT')
-                    for poly in obj.data.polygons:
-                        if poly.material_index >= len(obj.material_slots) or obj.material_slots[poly.material_index].material is None:
-                            if obj not in objectsMissingMaterials: 
-                                objectsMissingMaterials.append(obj)  
-                                self.setVisData(obj.name,poly.index)     
-                    bpy.ops.object.mode_set(mode=current_mode)
-
-            if(objectsMissingMaterials == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objectsMissingMaterials:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
+    def execute(self, context):
+        self.setState(TestState.ERROR)
+        self.setFailedInfo(
+            None, 
+            f"Error!\n\n" 
+            f"Something is definitely incorrect. Please fix it before turning in your homework.\n"
+            f"We will definitely make you redo your homework if you turn it in with this error."
+        )
 
 @register_test
-class NoTrisTest(Test):
-    label = "No Tris Test"
-    failedMessage = "These objects have triangles:"
-    homeworks = [1,3,4]
-    visType = VIS_TYPE.POLYGON
-    def is_applicable(self,context):
-        return True
+class Crash_Test(Test):
+    label = "This test always ends up as crash"
+    homeworks = [HomeworkBatteries.Showcase_crash]
 
-    def execute(self,context):
-        try:         
-            objectsWithTriangles = [] 
-            for obj in bpy.data.objects:
-                if obj.type == 'MESH':
-                    current_mode = bpy.context.object.mode
-                    bpy.ops.object.mode_set(mode='OBJECT')
-                    for poly in obj.data.polygons:
-                        if len(poly.vertices) == 3: 
-                             if obj not in objectsWithTriangles: 
-                                objectsWithTriangles.append(obj) 
-                                self.setVisData(obj.name,poly.index) 
-                    bpy.ops.object.mode_set(mode=current_mode)
-
-            if(objectsWithTriangles == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objectsWithTriangles:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-@register_test
-class BrokenTest(Test):
-    label = "Broken Test"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        print("Broken Test - execute")
-        scene = context.scene
-        cursor = scene.cursor.location
-        sceneObjects = scene.objects
-        numberOfObjects = len(sceneObjects)
-        try:
-            scene.objects["NonExistingCube"].active = True
-            self.setState(TestState.OK)
-
-        except:          
-            self.setState(TestState.CRASH)
-            #TRACEBACKS[self.testId] = traceback.format_exc()
-            self.traceback = traceback.format_exc()
-            
-
-@register_test
-class NoCrazySubdivision(Test):
-    label = "No Crazy Subdivision"
-    failedMessage = "These objects have high subdivision:"
-    homeworks = []
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objectsWithHighSubdivision = [] 
-            for obj in bpy.data.objects:
-                subsurf_modifier = obj.modifiers.get('Subdivision')
-                if subsurf_modifier:
-                    if subsurf_modifier.levels > 5:
-                        objectsWithHighSubdivision.append(obj)
-
-            if(objectsWithHighSubdivision == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objectsWithHighSubdivision:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.WARNING)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-@register_test
-class RenderSubdivisionNotLessThenViewport(Test):
-    label = "RenderSubdivisionNotLessThenViewport"
-    failedMessage = "These objects have render subdivision less than viewport subdivision:"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            for obj in bpy.data.objects:
-                subsurf_modifier = obj.modifiers.get('Subdivision')
-                if subsurf_modifier:
-                    if subsurf_modifier.render_levels < subsurf_modifier.levels:
-                        objects.append(obj)
-
-            if(objects == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objects:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-@register_test
-class DiffuseImageMapIsRGB(Test):
-    label = "Diffuse Image Map Is sRGB"
-    failedMessage = "Those textures are not in sRGB space:"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            for material in bpy.data.materials:
-                if material.use_nodes:
-                    for node in material.node_tree.nodes:
-                        if node.type == 'TEX_IMAGE':
-                            image = node.image
-                            if image and node.label == "Diffuse":
-                                color_space = image.colorspace_settings.name
-                                if color_space != 'sRGB':
-                                    objects.append(material.name)
-
-            if(objects == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objects:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-@register_test
-class NoInappropriateMetallness(Test):
-    label = "No Inappropriate Metallness"
-    failedMessage = "Materials should have 0.0 or 1.0 metallic values. \n Those materials:"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            for material in bpy.data.materials:
-                if material.use_nodes:
-                    for node in material.node_tree.nodes:
-                        if node.type == 'BSDF_PRINCIPLED':
-                            metallic_value = node.inputs['Metallic'].default_value
-                            if(metallic_value>0.01 and metallic_value<0.99):
-                                objects.append(material)
-
-            if(objects == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objects:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.WARNING)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-
-@register_test
-class NoFlatShading(Test):
-    label = "No Flat Shading"
-    failedMessage = "Don't use flat shading.\n Those objects use flat shading:"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            for obj in bpy.context.scene.objects:
-                if obj.type == 'MESH':
-                    flat_shaded = all(not poly.use_smooth for poly in obj.data.polygons)
-                    if flat_shaded:
-                        objects.append(obj)
-
-            if(objects == []):
-                self.setState(TestState.OK)
-            else:
-                for obj in objects:
-                    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-@register_test
-class NoSingleObject(Test): #object or mesh???
-    label = "No Single Object"
-    failedMessage = "There should not be single object.\n"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            nObjects = len(bpy.context.scene.objects)
-
-            if(nObjects > 1):
-                self.setState(TestState.OK)
-            else:
-                #for obj in objects:
-                #    self.addObjectNameToMessage(obj.name)
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
-
-
-@register_test
-class ReferencesPresentTest(Test): #object or mesh???
-    label = "References Present"
-    failedMessage = "There should be atleast two reference images.\n"
-    homeworks = [2,3,4]
-    def is_applicable(self,context):
-        return True
-
-    def execute(self,context):
-        try:         
-            objects = [] 
-            nObjects = len(bpy.context.scene.objects)
-
-            if(nObjects > 1):
-                self.setState(TestState.OK)
-            else:
-                self.setState(TestState.ERROR)
-
-        except:
-            self.traceback = traceback.format_exc()
-            self.setState(TestState.CRASH)
+    def execute(self, context):
+        raise Exception(
+            f"The issue is not in your mesh!\n"
+            f"Something is definitely incorrect, but it's on us. Please safe the file as-is,\n" 
+            f"copy the traceback with this button, and send both the blend and traceback to your teachers."
+        )
+    

@@ -5,9 +5,11 @@ from . import utils
 from .testVisualisation import selectPolygon,VIS_TYPE
 icons = ["ANTIALIASED","CHECKBOX_HLT","QUESTION","CANCEL","PLUGIN"]
 
+def remove_trailing_dot(string: str):
+    """Blender UI automatically appends dot to details"""
+    return string.removesuffix(".")
 
-
-class MyProperties(bpy.types.PropertyGroup):
+class PigeonProperties(bpy.types.PropertyGroup):
     def onChange(self,context):
         testRunner.resetTestResults()
         tests.resetTests()
@@ -16,14 +18,12 @@ class MyProperties(bpy.types.PropertyGroup):
         name="",
         description="Select an option",
         items=[
-            ("HW1","Homework 1",""),
-            ("HW2","Homework 2",""),
-            ("HW3","Homework 3",""),
-            ("HW4","Homework 4",""),
-            ("showcase-ok", "Showcase - OK", ""),
-            ("showcase-warn", "Showcase - Warning", ""),
-            ("showcase-error", "Showcase - Error", ""),
-            ("showcase-crash", "Showcase - Crash", ""),
+            (
+                battery._id,
+                battery._label,
+                battery._label,
+            )
+            for battery in tests.get_all_batteries()
         ],
         update=onChange
     )
@@ -35,7 +35,7 @@ class MyProperties(bpy.types.PropertyGroup):
 
 def create_visualisation_operator(hw_id,op_id):
     class VisualisationOperator(bpy.types.Operator):
-        bl_idname = f"object.visualisation_operator_{hw_id}_{op_id}"
+        bl_idname = f"pigeons.visualisation_operator_{hw_id}_{op_id}"
         bl_label = "Visual OP"
         
         methodID: bpy.props.IntProperty()
@@ -50,42 +50,36 @@ def create_visualisation_operator(hw_id,op_id):
 
 def create_show_details_operator(hw_id,op_id):
     class ShowDetailsOperator(bpy.types.Operator):
-        bl_idname = f"object.show_details_operator_{hw_id}_{op_id}"
-        bl_label = "Details"
+        bl_idname = f"pigeons.show_details_operator_{hw_id}_{op_id}"
+        bl_label = ""
         
-        dataBlock: bpy.props.StringProperty()
-        dataBlockName: bpy.props.StringProperty()
         message: bpy.props.StringProperty()
 
-        def invoke(self, context, event):
-            wm = context.window_manager
-            return wm.invoke_props_dialog(self, width=200)
-        
-        def draw(self, context):
-            labels = self.message.split("\n")
-            for _label in labels:
-                row = self.layout.row()
-                row.label(text=_label)
-       
         def execute(self, context):
             return {'FINISHED'}
         
+        @classmethod
+        def description(cls, context, properties):
+            return remove_trailing_dot(properties.message)
+
     return ShowDetailsOperator
 
 def create_traceback_operator(hw_id,op_id): #TODO: test id should be here
     class TracebackOperator(bpy.types.Operator):
-        bl_idname = f"object.traceback_operator_{hw_id}_{op_id}"
-        bl_label = f"Copy Traceback {op_id} - Click to copy traceback\n"
-        myId = op_id
-        hwId = hw_id
+        bl_idname = f"pigeons.traceback_operator_{hw_id}_{op_id}"
+        bl_label = f"Copy Traceback\n"
+        tracback_op_id = op_id
+        hw_op_id = hw_id
+
         def execute(self, context):
-            homework = testRunner.TEST_REGISTRY[self.hwId]
-            utils.copy_to_clipboard(homework[self.myId].traceback)
+            homework = tests.TEST_REGISTRY[self.hw_op_id]
+            utils.copy_to_clipboard(homework[self.tracback_op_id].traceback)
             return {'FINISHED'}
+        
         @classmethod
-        def description(self, context, properties):
-            homework = testRunner.TEST_REGISTRY[self.hwId]
-            return homework[self.myId].traceback
+        def description(cls, context, properties):
+            homework = tests.TEST_REGISTRY[cls.hw_op_id]
+            return remove_trailing_dot(homework[cls.tracback_op_id].traceback)
 
     return TracebackOperator
 
@@ -93,7 +87,7 @@ def create_traceback_operator(hw_id,op_id): #TODO: test id should be here
 updater = True
 class RunTestsPanel(bpy.types.Panel):
     bl_label = "Run Tests Panel"
-    bl_idname = "OBJECT_PT_tests"
+    bl_idname = "PIGEONS_PT_tests"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "PIGEO'n'S"
@@ -102,12 +96,11 @@ class RunTestsPanel(bpy.types.Panel):
         layout = self.layout 
                 
         scene = context.scene
-        my_tool = scene.my_tool
+        pigeons = scene.pigeons
         row = layout.row()
-        row.prop(my_tool,"homework_selector")
+        row.prop(pigeons,"homework_selector")
         
-        hw_id_string = context.scene.my_tool.homework_selector
-        hw_id = int(hw_id_string[2:])
+        hw_id = context.scene.pigeons.homework_selector
         
         currentTests = tests.TEST_REGISTRY[hw_id]
         
@@ -126,19 +119,29 @@ class RunTestsPanel(bpy.types.Panel):
                 col1.label(text=test.message)
             col2 = row.column()
             col2.scale_x = 1
+
+            # No issue 
+            if(test.state == tests.TestState.INIT):
+                continue
+
+            if(test.state == tests.TestState.OK):
+                continue
+            
+            # Our issue
             if(test.state == tests.TestState.CRASH):
-                col2.operator(f"object.traceback_operator_{hw_id}_{i}",text="",icon='COPYDOWN')
+                col2.operator(f"pigeons.traceback_operator_{hw_id}_{i}",text="",icon='COPYDOWN')
+                continue
+
+            # Student issue
             if(test.state == tests.TestState.ERROR):
                 if(test.visType != VIS_TYPE.NONE):
-                    visualisation_operator = col2.operator(f"object.visualisation_operator_{hw_id}_{i}",text="",icon='OUTLINER_OB_LIGHT')
+                    visualisation_operator = col2.operator(f"pigeons.visualisation_operator_{hw_id}_{i}",text="",icon='OUTLINER_OB_LIGHT')
                     visualisation_operator.objectName = test.visData.objectName
                     visualisation_operator.dataID = test.visData.dataID# test.visData
                 
-                col3 = row.column()
-                show_detail_operator = col3.operator(f"object.show_details_operator_{hw_id}_{i}",text="",icon='INFO')           
-                show_detail_operator.dataBlock="dataBlock"
-                show_detail_operator.dataBlockName="dataBlock"
-                show_detail_operator.message=test.failedMessage
+            col3 = row.column()
+            show_detail_operator = col3.operator(f"pigeons.show_details_operator_{hw_id}_{i}",text="",icon='INFO')           
+            show_detail_operator.message=test.failedInfo.message if test.failedInfo is not None else "Unfortunately, we have no more information to give here." 
                 
 
         row = layout.row()   

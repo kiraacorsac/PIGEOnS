@@ -1,5 +1,5 @@
 import bpy
-
+import traceback
 from . import tests
 showInfos = []
 TEST_RESULTS_PROPERTY = "pigeons_test_results"
@@ -11,30 +11,14 @@ def resetTestResults():
     return tests_results
 
 
-class ShowResultsOperator(bpy.types.Operator):
-    bl_idname = "myaddon.show_results"
-    bl_label = "Details"
-    
-    message: bpy.props.StringProperty()
-    
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=200)
-    
-    def draw(self, context):
-        self.layout.label(text=self.message)
-    
-    def execute(self, context):
-
-        return {'FINISHED'}
-
 class TestRunnerOperator(bpy.types.Operator):
-    """Tooltip"""
-    bl_idname = "object.test_runner_operator"
+    bl_idname = "pigeons.test_runner_operator"
     bl_label = "TestRunnder Operator"
     bl_description = "TestRunnder Operator"
 
-    current_hw : bpy.props.IntProperty(default=1)
+    current_hw : bpy.props.StringProperty(
+        name="Homework to run"
+    )
 
 
     def execute(self, context):
@@ -42,12 +26,16 @@ class TestRunnerOperator(bpy.types.Operator):
         tests_results = resetTestResults()
 
         for i in range(len(currentTests)):
-            currentTests[i].execute(context)
+            try:
+                currentTests[i].execute(context)
+            except Exception as e:
+                currentTests[i].state = tests.TestState.CRASH
+                currentTests[i].traceback = "\n".join(traceback.format_exception(e))
             tests_results[currentTests[i].state.value] += 1
 
         bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
-        my_props = context.scene.my_tool
-        context.scene.my_tool.updater = not my_props.updater
+        pigeons_props = context.scene.pigeons
+        context.scene.pigeons.updater = not pigeons_props.updater
         return {'FINISHED'}
     
 

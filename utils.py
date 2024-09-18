@@ -1,7 +1,7 @@
 import os
 import pathlib
 import bpy
-import bpy.utils.previews # this is needed, otherwise it won't be available
+import bpy.utils.previews # this is needed, otherwise previews won't be available via bpy
 import subprocess
 
 def copy_to_clipboard(_txt):
@@ -19,7 +19,8 @@ def copy_to_clipboard(_txt):
 pigeon_collection = bpy.utils.previews.new()
 
 def loadImages():
-    pigeon_names = ["hello", "ok", "warn", "error", "crash", "brb"]
+    pigeon_collection.clear()
+    pigeon_names = ["hello", "ok", "warning", "error", "crash", "brb"]
     image_format = ".png"
     relative_dir = pathlib.Path(os.path.dirname(__file__)) / "imgs"
     
