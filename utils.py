@@ -4,18 +4,20 @@ import bpy
 import bpy.utils.previews # this is needed, otherwise previews won't be available via bpy
 import subprocess
 
-def copy_to_clipboard(_txt):
-    """Wow this function is high grade bullshit, can we do it better?"""
-    txt = str(_txt)
+import tempfile
+import subprocess
 
-    safe_text = txt.replace("\n", ' ') #traceback má v sobě \n, takže zatím je nrahzeno mezerou, ale lze použít tmp file
-    print(safe_text)
-    cmd = 'echo ' + safe_text.strip() +' | clip'#+ '|clip'
-    try:
-        subprocess.run(cmd, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to copy to clipboard: {e}")
 
+
+def copy_to_clipboard(string: str) -> None:
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(string.encode())
+        tmp.close()
+        cmd = 'type ' + tmp.name + '|clip'
+        subprocess.check_call(cmd, shell=True)
+
+
+# this is not very util, let's move this to another file
 pigeon_collection = bpy.utils.previews.new()
 
 def loadImages():
