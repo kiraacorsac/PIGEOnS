@@ -2,7 +2,7 @@ bl_info = {
     "name": "Custom addon2",
     "author": "KiraaCorsac, Dusan, @CCArtStuff",
     "version": (1, 0),
-    "blender": (3, 2, 0),
+    "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > New Object",
     "description": "Adds something",
     "warning": "",
