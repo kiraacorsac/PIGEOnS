@@ -25,13 +25,15 @@ class TestRunnerOperator(bpy.types.Operator):
         currentTests = tests.TEST_REGISTRY[self.current_hw]
         tests_results = resetTestResults()
 
-        for i in range(len(currentTests)):
+        for test in currentTests:
             try:
-                currentTests[i].execute(context)
+                test.execute(context)
+                if test.state == tests.TestState.INIT:
+                    raise Exception(f"Test '{test.label}' did not change state, stayed {tests.TestState.INIT.name} after execution.")
             except Exception as e:
-                currentTests[i].state = tests.TestState.CRASH
-                currentTests[i].traceback = "\n".join(traceback.format_exception(e))
-            tests_results[currentTests[i].state.value] += 1
+                test.state = tests.TestState.CRASH
+                test.traceback = "\n".join(traceback.format_exception(e))
+            tests_results[test.state.value] += 1
 
         bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
         pigeons_props = context.scene.pigeons
