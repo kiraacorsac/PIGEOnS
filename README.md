@@ -1,4 +1,4 @@
-# PIGEO'n'S - *P*rogram for *I*nteractive *G*rading and *E*valuation of *O*bjects a*n*d *S*cenes
+# PIGEO'n'S - Program to Interactively Grade and Evaluate Objects and Scenes
 
 ![hello](imgs/hello.png)
 
