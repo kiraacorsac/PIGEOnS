@@ -1,5 +1,7 @@
 # PIGEO'n'S - *P*rogram for *I*nteractive *G*rading and *E*valuation of *O*bjects a*n*d *S*cenes
 
+![hello](imgs/hello.png)
+
 Blender extenension to help with homework grading for course VV035 - 3D Modelling, taught at FI MUNI. Yes, we are proud of the name.
 
 Developed by Dusan as part of semestral project, maintained by KiraaCorsac and other lectors of VV035.
