@@ -30,3 +30,6 @@ def loadImages():
         pigoen_filename = f"{pigeon}{image_format}"
         pigeon_collection.load(pigeon.upper(), str(relative_dir/pigoen_filename), 'IMAGE')
     
+
+def filter_used_datablocks(datablocks: [bpy.types.ID]):
+    return filter(lambda d: d.users > 0, datablocks)
