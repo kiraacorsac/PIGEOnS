@@ -32,7 +32,7 @@ def get_all_batteries():
     return [getattr(HomeworkBatteries, hw_key) for hw_key in dir(HomeworkBatteries) if not hw_key.startswith("_")]
 
 def get_all_student_work_batteries():
-    return filter(lambda bat: not bat._id.startswith("Showcase_"), get_all_batteries())
+    return filter(lambda bat: not bat._id.startswith("showcase"), get_all_batteries())
 
 TEST_REGISTRY = {}
 
