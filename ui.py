@@ -86,7 +86,7 @@ def create_traceback_operator(hw_id,op_id): #TODO: test id should be here
 
 updater = True
 class RunTestsPanel(bpy.types.Panel):
-    bl_label = "Run Tests Panel"
+    bl_label = "Tests"
     bl_idname = "PIGEONS_PT_tests"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
