@@ -1,5 +1,6 @@
 import typing
 import bpy
+import bmesh
 from enum import Enum
 from . import utils
 from .testVisualisation import selectPolygon,VIS_TYPE
@@ -245,17 +246,20 @@ class NoTris(Test):
     # visType = VIS_TYPE.POLYGON
 
     def execute(self,context):
+        context.view_layer.update()
         self.setState(TestState.OK)
         objects_with_triangles = set() 
-        current_mode = bpy.context.object.mode
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             if obj.type == 'MESH':
-                bpy.ops.object.mode_set(mode='OBJECT')
-                for poly in obj.data.polygons:
-                    if len(poly.vertices) == 3: 
+                if bpy.context.object == obj and bpy.context.object.mode == 'EDIT':
+                    mesh = bmesh.from_edit_mesh(obj.data)
+                else:
+                    mesh = bmesh.new()
+                    mesh.from_mesh(obj.data)
+                for face in mesh.faces:
+                    if len(face.verts) == 3: 
                         objects_with_triangles.add(obj) 
                         # self.setVisData(obj.name,poly.index) 
-                bpy.ops.object.mode_set(mode=current_mode)
 
         if len(objects_with_triangles) > 0:
             self.setFailedInfo(
@@ -277,15 +281,17 @@ class NoNgons(Test):
     def execute(self,context):
         self.setState(TestState.OK)
         objects_with_ngons = set() 
-        current_mode = bpy.context.object.mode
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             if obj.type == 'MESH':
-                bpy.ops.object.mode_set(mode='OBJECT')
-                for poly in obj.data.polygons:
-                    if len(poly.vertices) > 4: 
+                if bpy.context.object == obj and bpy.context.object.mode == 'EDIT':
+                    mesh = bmesh.from_edit_mesh(obj.data)
+                else:
+                    mesh = bmesh.new()
+                    mesh.from_mesh(obj.data)
+                for face in mesh.faces:
+                    if len(face.verts) > 4: 
                         objects_with_ngons.add(obj) 
                         # self.setVisData(obj.name,poly.index) 
-                bpy.ops.object.mode_set(mode=current_mode)
 
         if len(objects_with_ngons) > 0:
             self.setFailedInfo(
