@@ -32,4 +32,4 @@ def loadImages():
     
 
 def filter_used_datablocks(datablocks: [bpy.types.ID]):
-    return filter(lambda d: d.users > 0, datablocks)
+    return list(filter(lambda d: d.users > 0, datablocks)) # materialize becuase we need len() almost always
