@@ -3,7 +3,6 @@ from . import tests
 from . import testRunner
 from . import utils
 from .testVisualisation import selectPolygon,VIS_TYPE
-icons = ["ANTIALIASED","CHECKBOX_HLT","QUESTION","CANCEL","PLUGIN"]
 
 def remove_trailing_dot(string: str):
     """Blender UI automatically appends dot to details"""
@@ -103,12 +102,13 @@ class RunTestsPanel(bpy.types.Panel):
         hw_id = context.scene.pigeons.homework_selector
         
         currentTests = tests.TEST_REGISTRY[hw_id]
+        icons = ["ANTIALIASED","CHECKBOX_HLT","QUESTION","CANCEL","PLUGIN", "LOOP_FORWARDS"]
         
         for i in range(len(currentTests)):
             test = currentTests[i]
             row = layout.row()
 
-            if(test.state not in {tests.TestState.OK, tests.TestState.INIT}):
+            if(test.state not in {tests.TestState.OK, tests.TestState.INIT, tests.TestState.SKIPPED}):
                 row.alert = True
 
             col1 = row.column()
@@ -125,6 +125,9 @@ class RunTestsPanel(bpy.types.Panel):
                 continue
 
             if(test.state == tests.TestState.OK):
+                continue
+
+            if(test.state == tests.TestState.SKIPPED):
                 continue
             
             # Our issue
@@ -152,14 +155,16 @@ class RunTestsPanel(bpy.types.Panel):
         pigeon = "HELLO"        
         if testRunner.TEST_RESULTS_PROPERTY in bpy.context.scene:
             results = bpy.context.scene[testRunner.TEST_RESULTS_PROPERTY]
-            if(results[tests.TestState.WARNING.value] > 0):
+            if results[tests.TestState.WARNING.value] > 0:
                 pigeon = tests.TestState.WARNING.name
-            if(results[tests.TestState.ERROR.value] > 0):
+            if results[tests.TestState.ERROR.value] > 0:
                 pigeon = tests.TestState.ERROR.name
-            if(results[tests.TestState.CRASH.value] > 0):
+            if results[tests.TestState.CRASH.value] > 0:
                 pigeon = tests.TestState.CRASH.name
-            if(results[tests.TestState.OK.value] == len(currentTests)):
+            if results[tests.TestState.OK.value] + results[tests.TestState.SKIPPED.value] == len(currentTests):
                 pigeon = tests.TestState.OK.name
+            
+
         imgCol.label
         imgCol.template_icon(utils.pigeon_collection[pigeon].icon_id,scale=8)
         context.area.tag_redraw()

@@ -27,7 +27,10 @@ class TestRunnerOperator(bpy.types.Operator):
 
         for test in currentTests:
             try:
-                test.execute(context)
+                if not test.is_applicable(context):
+                    test.state = tests.TestState.SKIPPED
+                else:
+                    test.execute(context)
                 if test.state == tests.TestState.INIT:
                     raise Exception(f"Test '{test.label}' did not change state, stayed {tests.TestState.INIT.name} after execution.")
             except Exception as e:
