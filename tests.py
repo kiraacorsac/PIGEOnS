@@ -29,6 +29,7 @@ class HomeworkBatteries:
     Showcase_warning = HomeworkBatteryInfo("Showcase - Warning", 102)
     Showcase_error = HomeworkBatteryInfo("Showcase - Error", 103)
     Showcase_crash = HomeworkBatteryInfo("Showcase - Crash", 104)
+    Showcase_skip = HomeworkBatteryInfo("Showcase - Skip", 105)
     
 def get_all_batteries():
     return sorted(
@@ -158,9 +159,22 @@ class Crash_Test(Test):
 
     def execute(self, context):
         raise Exception(
-            f"The issue is not in your mesh!\n"
+            f"The problem is not on your side!\n"
             f"Something is definitely incorrect, but it's on us. Please safe the file as-is,\n" 
             f"copy the traceback with this button, and send both the blend and traceback to your teachers."
+        )
+    
+@register_test
+class Skip_Test(Test):
+    label = "This test does not run"
+    homeworks = [HomeworkBatteries.Showcase_skip]
+    
+    def is_applicable(self, context):
+        return False
+    
+    def execute(self, context):
+        raise Exception(
+            f"You should not ever see this."
         )
     
 @register_test
