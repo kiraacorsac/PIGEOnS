@@ -546,7 +546,7 @@ class UseModifiers(Test):
             self.setState(TestState.WARNING)
             self.setFailedInfo(
                 None,
-                f"We would like you to use some (at least 2) modifiers in this homework."
+                f"We would like you to use some (at least 2) modifiers in this homework. For example, 'Array' or 'Simple Deform' are useful!"
             )
                 
 
@@ -562,4 +562,22 @@ class UseHW2File(Test):
             self.setFailedInfo(
                 None,
                 f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby."
+            )
+
+@register_test
+class UseLights(Test):
+    label = "Use lights"
+    homeworks = [HomeworkBatteries.HW2]
+    
+    def execute(self, context):
+        self.setState(TestState.OK)
+        lights = set()
+        for light in utils.filter_used_datablocks(bpy.data.lights):
+            lights.add(light)
+        
+        if len(lights) < 1:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"You need to have lights in your scene, otherwise nothing will be visible on the final renders."
             )
