@@ -1,6 +1,7 @@
 import typing
 import bpy
 import bmesh
+import math
 from enum import Enum
 from . import utils
 from .testVisualisation import selectPolygon,VIS_TYPE
@@ -11,26 +12,29 @@ def resetTests():
             test.reset()
 
 class HomeworkBatteryInfo:
-    def __init__(self, homework_battery_label: str):
+    def __init__(self, homework_battery_label: str, order = math.inf):
+        self.order = order
         self._id = homework_battery_label.replace(" ", "").replace("-", "").lower()
         self._label = homework_battery_label
     
 
 class HomeworkBatteries:
-    HW1 = HomeworkBatteryInfo("Homework 1")
-    HW2 = HomeworkBatteryInfo("Homework 2")
-    HW3 = HomeworkBatteryInfo("Homework 3")
-    HW4 = HomeworkBatteryInfo("Homework 4")
-    HW5 = HomeworkBatteryInfo("Homework 5")
-    HW6 = HomeworkBatteryInfo("Homework 6")
-    HW7 = HomeworkBatteryInfo("Homework 7")
-    Showcase_OK = HomeworkBatteryInfo("Showcase - OK")
-    Showcase_warning = HomeworkBatteryInfo("Showcase - Warning")
-    Showcase_error = HomeworkBatteryInfo("Showcase - Error")
-    Showcase_crash = HomeworkBatteryInfo("Showcase - Crash")
+    HW2 = HomeworkBatteryInfo("Homework 2 - Composition", 20)
+    # HW3 = HomeworkBatteryInfo("Homework 3")
+    # HW4 = HomeworkBatteryInfo("Homework 4")
+    # HW5 = HomeworkBatteryInfo("Homework 5")
+    # HW6 = HomeworkBatteryInfo("Homework 6")
+    # HW7 = HomeworkBatteryInfo("Homework 7")
+    Showcase_OK = HomeworkBatteryInfo("Showcase - OK", 101)
+    Showcase_warning = HomeworkBatteryInfo("Showcase - Warning", 102)
+    Showcase_error = HomeworkBatteryInfo("Showcase - Error", 103)
+    Showcase_crash = HomeworkBatteryInfo("Showcase - Crash", 104)
     
 def get_all_batteries():
-    return [getattr(HomeworkBatteries, hw_key) for hw_key in dir(HomeworkBatteries) if not hw_key.startswith("_")]
+    return sorted(
+        [getattr(HomeworkBatteries, hw_key) for hw_key in dir(HomeworkBatteries) if not hw_key.startswith("_")],
+        key=lambda b: b.order
+    )
 
 def get_all_student_work_batteries():
     return filter(lambda bat: not bat._id.startswith("showcase"), get_all_batteries())
@@ -53,6 +57,7 @@ class TestState(Enum):
     WARNING = 2
     ERROR = 3
     CRASH = 4
+    SKIPPED = 5
 
 class Test:
     testId = 0
@@ -161,7 +166,7 @@ class Crash_Test(Test):
 @register_test
 class NoDefaultName(Test):
     label = "No default names"
-    homeworks = get_all_student_work_batteries()
+    homeworks = []
 
     def execute(self, context):
         def is_default_name(obj_name: str, default_name: str):
@@ -196,7 +201,7 @@ class NoDefaultName(Test):
 @register_test
 class MaterialsSet(Test):
     label = "No objects without materials"
-    homeworks = get_all_student_work_batteries()
+    homeworks = [HomeworkBatteries.HW2]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self,context):
@@ -220,7 +225,7 @@ class MaterialsSet(Test):
 @register_test
 class NoEmptyMaterialSlotsSet(Test):
     label = "No objects with empty material slots"
-    homeworks = get_all_student_work_batteries()
+    homeworks = [HomeworkBatteries.HW2]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self,context):
@@ -242,7 +247,7 @@ class NoEmptyMaterialSlotsSet(Test):
 @register_test
 class NoTris(Test):
     label = "No triangles"
-    homeworks = get_all_student_work_batteries()
+    homeworks = []
     # visType = VIS_TYPE.POLYGON
 
     def execute(self,context):
@@ -275,7 +280,7 @@ class NoTris(Test):
 @register_test
 class NoNgons(Test):
     label = "No N-gons"
-    homeworks = get_all_student_work_batteries()
+    homeworks = []
     # visType = VIS_TYPE.POLYGON
 
     def execute(self,context):
@@ -375,7 +380,7 @@ class NoMaterialsWithoutNodes(Test):
 @register_test
 class NoUnreallisticMetallness(Test):
     label = "No unreallistic metallness"
-    homeworks = get_all_student_work_batteries()
+    homeworks = []
 
     def execute(self,context):
         self.setState(TestState.OK)
@@ -402,7 +407,7 @@ class NoUnreallisticMetallness(Test):
 @register_test
 class NoFlatShading(Test):
     label = "No Flat Shading"
-    homeworks = get_all_student_work_batteries() # TODO: just the chair homework
+    homeworks = [] # TODO: just the chair homework
 
     def execute(self,context):
         self.setState(TestState.OK)
@@ -425,7 +430,7 @@ class NoFlatShading(Test):
 @register_test
 class NoSingleMeshObject(Test):
     label = "No Single Mesh Object"
-    homeworks = get_all_student_work_batteries() #TODO: just the chair homework
+    homeworks = [] #TODO: just the chair homework
 
     def execute(self,context):
         self.setState(TestState.OK)
@@ -442,7 +447,7 @@ class NoSingleMeshObject(Test):
 @register_test
 class ReferencesPresent(Test):
     label = "References Present"
-    homeworks = get_all_student_work_batteries()
+    homeworks = []
 
     def execute(self,context):
         self.setState(TestState.OK)
@@ -476,7 +481,7 @@ class PackedImages(Test):
 @register_test
 class UseCycles(Test):
     label = "Use Cycles"
-    homeworks = get_all_student_work_batteries() # only the material one
+    homeworks = [] # only the material one
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -509,4 +514,38 @@ class UseGPU(Test):
                 f"In Preferences -> System -> Cycles Render Devices, make sure you have appropriate device type selected (probably CUDA or OptiX). "
                 f"Ignore this warning if you empirically observed that your CPU is faster (e.g. you have no dedicated GPU), "
                 f"or if Blender tells you that you have no compatible GPUs found."
+            )
+
+
+@register_test
+class UseModifiers(Test):
+    label = "Use modifiers"
+    homeworks = [HomeworkBatteries.HW2]
+    
+    def execute(self, context):
+        self.setState(TestState.OK)
+        modifiers = set()
+        for obj in utils.filter_used_datablocks(bpy.data.objects):
+            for mod in obj.modifiers:
+                modifiers.add(mod)
+        if len(modifiers) < 2:
+            self.setState(TestState.WARNING)
+            self.setFailedInfo(
+                None,
+                f"We would like you to use some (at least 2) modifiers in this homework."
+            )
+                
+
+@register_test
+class UseHW2File(Test):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW2]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get('pigeons_hw2_flagpost', False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby."
             )
