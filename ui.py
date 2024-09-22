@@ -2,6 +2,7 @@ import bpy
 from . import tests
 from . import testRunner
 from . import utils
+from . import updates
 from .testVisualisation import selectPolygon, VIS_TYPE
 
 
@@ -85,9 +86,6 @@ def create_traceback_operator(hw_id, op_id):  # TODO: test id should be here
     return TracebackOperator
 
 
-updater = True
-
-
 class RunTestsPanel(bpy.types.Panel):
     bl_label = "Tests"
     bl_idname = "PIGEONS_PT_tests"
@@ -97,7 +95,25 @@ class RunTestsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
+        released_version = updates.check_released_version()
+        if updates.version is None or released_version is None:
+            row = layout.row()
+            row.alert = True
+            row.label(
+                text="Unable to check for updates. Check manually using the preferences panel."
+            )
+        elif released_version > updates.version:
+            row = layout.row()
+            row.alert = True
+            row.label(text="New version of PIGEO'n'S is available.")
+            row = layout.row()
+            row.alert = True
+            row.label(text="Update using the preferences panel.")
+        else:
+            row = layout.row()
+            row.label(
+                text=f"It's OK! Released: {released_version}, yours: {updates.version}"
+            )
         scene = context.scene
         pigeons = scene.pigeons
         row = layout.row()
