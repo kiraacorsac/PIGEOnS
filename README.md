@@ -26,7 +26,7 @@ Observe the pigeon to learn about the quality of your homework.
 
 You are very welcomed to contribute to development of PIGEO'n'S. We can roll out changes very quickly, so if you help us fix a bug early in the semester, it's likely that students enrolled in the same semester get to see the fix :)
 
-Submit a PR. 
+To submit a PR: 
 - Describe what you are trying to solve
 - Describe how your PR is making this software better 
 - Make sure the extension builds
@@ -35,7 +35,19 @@ Submit a PR.
 
 For development, use [Blender Development VS Code extension](https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development).
 
+Set up a `.env` file that looks like this
+```
+BLENDER_PATH="C:/Program Files/Blender Foundation/Blender 4.2/blender.exe"
+```
+
+Ensure correct development environment
+```
+python -m venv venv
+./venv/Script/activate
+pip install -r requirements.txt
+```
+
 Build releases with
 ```
-blender --command extension build --valid-tags=""
+invoke build
 ```

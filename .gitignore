@@ -1,2 +1,5 @@
+# consider also adding it the rule to blender_manifest.toml
 *.pyc
 __pycache__
+venv
+.env
