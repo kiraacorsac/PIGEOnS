@@ -4,19 +4,21 @@ import bmesh
 import math
 from enum import Enum
 from . import utils
-from .testVisualisation import selectPolygon,VIS_TYPE
+from .testVisualisation import selectPolygon, VIS_TYPE
+
 
 def resetTests():
     for _, tests in TEST_REGISTRY.items():
         for test in tests:
             test.reset()
 
+
 class HomeworkBatteryInfo:
-    def __init__(self, homework_battery_label: str, order = math.inf):
+    def __init__(self, homework_battery_label: str, order=math.inf):
         self.order = order
         self._id = homework_battery_label.replace(" ", "").replace("-", "").lower()
         self._label = homework_battery_label
-    
+
 
 class HomeworkBatteries:
     HW2 = HomeworkBatteryInfo("Homework 2 - Composition", 20)
@@ -30,27 +32,36 @@ class HomeworkBatteries:
     Showcase_error = HomeworkBatteryInfo("Showcase - Error", 103)
     Showcase_crash = HomeworkBatteryInfo("Showcase - Crash", 104)
     Showcase_skip = HomeworkBatteryInfo("Showcase - Skip", 105)
-    
+
+
 def get_all_batteries():
     return sorted(
-        [getattr(HomeworkBatteries, hw_key) for hw_key in dir(HomeworkBatteries) if not hw_key.startswith("_")],
-        key=lambda b: b.order
+        [
+            getattr(HomeworkBatteries, hw_key)
+            for hw_key in dir(HomeworkBatteries)
+            if not hw_key.startswith("_")
+        ],
+        key=lambda b: b.order,
     )
+
 
 def get_all_student_work_batteries():
     return filter(lambda bat: not bat._id.startswith("showcase"), get_all_batteries())
+
 
 TEST_REGISTRY = {}
 
 
 class FailedInfo:
-    dataBlock : bpy.props.StringProperty()
-    message : bpy.props.StringProperty()
+    dataBlock: bpy.props.StringProperty()
+    message: bpy.props.StringProperty()
+
 
 class VisData:
     method = None
-    objectName = ''
+    objectName = ""
     dataID = None
+
 
 class TestState(Enum):
     INIT = 0
@@ -60,49 +71,50 @@ class TestState(Enum):
     CRASH = 4
     SKIPPED = 5
 
+
 class Test:
     testId = 0
     label = ""
     state = TestState.INIT
     failedMessage = ""
-    failedInfo : typing.Optional[FailedInfo] = None
     homeworks = []
     traceback = ""
     visData = None
     visType = VIS_TYPE.NONE
     objects = []
 
-    def is_applicable(self,context):
+    def is_applicable(self, context):
         return True
-    
-    def execute(self,context):
+
+    def execute(self, context):
         pass
 
-    def setFailedInfo(self,_dataBlock,_message):
+    def setFailedInfo(self, _dataBlock, _message):
         self.failedInfo = FailedInfo()
         self.failedInfo.dataBlock = _dataBlock
         self.failedInfo.message = _message
 
-    def addObjectNameToMessage(self,objectName):
-        self.failedMessage = self.failedMessage+"\n"+objectName
+    def addObjectNameToMessage(self, objectName):
+        self.failedMessage = self.failedMessage + "\n" + objectName
 
     def reset(self):
         self.state = TestState.INIT
         self.failedMessage = ""
-        self.failedInfo : FailedInfo
+        self.failedInfo: FailedInfo
         self.traceback = ""
 
-    def setVisData(self,objectName,dataID):
+    def setVisData(self, objectName, dataID):
         v = VisData()
         v.objectName = objectName
         v.dataID = dataID
         v.method = self.visType
         self.visData = v
 
-    def setState(self,state):
+    def setState(self, state):
         self.state = state
-    
-def register_test(test: Test):
+
+
+def register_test(test: type(Test)):
     testInst = test()
     for hw_battery in testInst.homeworks:
         global TEST_REGISTRY
@@ -112,7 +124,8 @@ def register_test(test: Test):
             continue
         TEST_REGISTRY[hw_battery._id].append(testInst)
 
-    return testInst  
+    return testInst
+
 
 @register_test
 class OK_Test(Test):
@@ -122,7 +135,7 @@ class OK_Test(Test):
 
     def execute(self, context):
         self.setState(TestState.OK)
-               
+
 
 @register_test
 class Warning_Test(Test):
@@ -132,11 +145,12 @@ class Warning_Test(Test):
     def execute(self, context):
         self.setState(TestState.WARNING)
         self.setFailedInfo(
-            None, 
-            f"Warning!\n\n" 
-            f"Something may be incorrect, but we can't really tell with automatic test - maybe it's OK?\n" 
-            f"Better make sure, unless you have a very good reason, we will make you redo this homework."
+            None,
+            f"Warning!\n\n"
+            f"Something may be incorrect, but we can't really tell with automatic test - maybe it's OK?\n"
+            f"Better make sure, unless you have a very good reason, we will make you redo this homework.",
         )
+
 
 @register_test
 class Error_Test(Test):
@@ -146,11 +160,12 @@ class Error_Test(Test):
     def execute(self, context):
         self.setState(TestState.ERROR)
         self.setFailedInfo(
-            None, 
-            f"Error!\n\n" 
+            None,
+            f"Error!\n\n"
             f"Something is definitely incorrect. Please fix it before turning in your homework.\n"
-            f"We will definitely make you redo your homework if you turn it in with this error."
+            f"We will definitely make you redo your homework if you turn it in with this error.",
         )
+
 
 @register_test
 class Crash_Test(Test):
@@ -160,23 +175,23 @@ class Crash_Test(Test):
     def execute(self, context):
         raise Exception(
             f"The problem is not on your side!\n"
-            f"Something is definitely incorrect, but it's on us. Please safe the file as-is,\n" 
+            f"Something is definitely incorrect, but it's on us. Please safe the file as-is,\n"
             f"copy the traceback with this button, and send both the blend and traceback to your teachers."
         )
-    
+
+
 @register_test
 class Skip_Test(Test):
     label = "This test does not run"
     homeworks = [HomeworkBatteries.Showcase_skip]
-    
+
     def is_applicable(self, context):
         return False
-    
+
     def execute(self, context):
-        raise Exception(
-            f"You should not ever see this."
-        )
-    
+        raise Exception(f"You should not ever see this.")
+
+
 @register_test
 class NoDefaultName(Test):
     label = "No default names"
@@ -185,13 +200,26 @@ class NoDefaultName(Test):
     def execute(self, context):
         def is_default_name(obj_name: str, default_name: str):
             return obj_name == default_name or obj_name.startswith(default_name + ".")
-        
+
         self.setState(TestState.OK)
 
         forbidden_names = [
-            (bpy.data.objects, ["Cube", "Plane", "Cylinder", "Sphere", "Icosphere", "Curve", "BézierCurve", "NurbsCurve", "NurbsPath"]),
+            (
+                bpy.data.objects,
+                [
+                    "Cube",
+                    "Plane",
+                    "Cylinder",
+                    "Sphere",
+                    "Icosphere",
+                    "Curve",
+                    "BézierCurve",
+                    "NurbsCurve",
+                    "NurbsPath",
+                ],
+            ),
             (bpy.data.materials, ["Material"]),
-            (bpy.data.images, ["Image"])
+            (bpy.data.images, ["Image"]),
         ]
 
         wrongly_named_objects = []
@@ -207,9 +235,8 @@ class NoDefaultName(Test):
                 None,
                 f"The following datablocks - {', '.join([obj.name for obj in wrongly_named_objects])} - use default names.\n\n"
                 f"these are not descriptive and may confuse others working on the same scene, "
-                f"or others using these objects in their scene. Use descriptive names instead."
+                f"or others using these objects in their scene. Use descriptive names instead.",
             )
-
 
 
 @register_test
@@ -218,11 +245,11 @@ class MaterialsSet(Test):
     homeworks = [HomeworkBatteries.HW2]
     # visType = VIS_TYPE.POLYGON
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        objects_missing_materials = [] 
+        objects_missing_materials = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
-            if obj.type != 'CURVE' and obj.type != 'MESH':
+            if obj.type != "CURVE" and obj.type != "MESH":
                 continue
             if len(obj.material_slots) > 0:
                 continue
@@ -233,8 +260,9 @@ class MaterialsSet(Test):
             self.setFailedInfo(
                 None,
                 f"The following datablocks - {', '.join([obj.name for obj in objects_missing_materials])} - don't have any materials assigned.\n\n"
-                f"These objects will have default 'grey' material in the render. We would like something better :)"
+                f"These objects will have default 'grey' material in the render. We would like something better :)",
             )
+
 
 @register_test
 class NoEmptyMaterialSlotsSet(Test):
@@ -242,9 +270,9 @@ class NoEmptyMaterialSlotsSet(Test):
     homeworks = [HomeworkBatteries.HW2]
     # visType = VIS_TYPE.POLYGON
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        objects_missing_materials = [] 
+        objects_missing_materials = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             for material_slot in obj.material_slots:
                 if material_slot.material is None:
@@ -255,8 +283,9 @@ class NoEmptyMaterialSlotsSet(Test):
             self.setFailedInfo(
                 None,
                 f"The following datablocks - {', '.join([obj.name for obj in objects_missing_materials])} - have empty material slots.\n\n"
-                f"Parts of the object that are assigned empty material slot will have default 'grey' material in the render. We would like something better :)"
+                f"Parts of the object that are assigned empty material slot will have default 'grey' material in the render. We would like something better :)",
             )
+
 
 @register_test
 class NoTris(Test):
@@ -264,21 +293,21 @@ class NoTris(Test):
     homeworks = []
     # visType = VIS_TYPE.POLYGON
 
-    def execute(self,context):
+    def execute(self, context):
         context.view_layer.update()
         self.setState(TestState.OK)
-        objects_with_triangles = set() 
+        objects_with_triangles = set()
         for obj in utils.filter_used_datablocks(bpy.data.objects):
-            if obj.type == 'MESH':
-                if bpy.context.object == obj and bpy.context.object.mode == 'EDIT':
+            if obj.type == "MESH":
+                if bpy.context.object == obj and bpy.context.object.mode == "EDIT":
                     mesh = bmesh.from_edit_mesh(obj.data)
                 else:
                     mesh = bmesh.new()
                     mesh.from_mesh(obj.data)
                 for face in mesh.faces:
-                    if len(face.verts) == 3: 
-                        objects_with_triangles.add(obj) 
-                        # self.setVisData(obj.name,poly.index) 
+                    if len(face.verts) == 3:
+                        objects_with_triangles.add(obj)
+                        # self.setVisData(obj.name,poly.index)
 
         if len(objects_with_triangles) > 0:
             self.setFailedInfo(
@@ -286,7 +315,7 @@ class NoTris(Test):
                 f"The following meshes - {', '.join([obj.name for obj in objects_with_triangles])} - have triangles.\n\n"
                 f"Triangles are faces with exactly 3 vertices. Triangular faces make it hard to edit the mesh, "
                 f"may deform incorrectly during animation, may cause shading issues, and don't play well with subdivision modifier. "
-                f"Stay quad!"
+                f"Stay quad!",
             )
             self.setState(TestState.WARNING)
 
@@ -297,20 +326,20 @@ class NoNgons(Test):
     homeworks = []
     # visType = VIS_TYPE.POLYGON
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        objects_with_ngons = set() 
+        objects_with_ngons = set()
         for obj in utils.filter_used_datablocks(bpy.data.objects):
-            if obj.type == 'MESH':
-                if bpy.context.object == obj and bpy.context.object.mode == 'EDIT':
+            if obj.type == "MESH":
+                if bpy.context.object == obj and bpy.context.object.mode == "EDIT":
                     mesh = bmesh.from_edit_mesh(obj.data)
                 else:
                     mesh = bmesh.new()
                     mesh.from_mesh(obj.data)
                 for face in mesh.faces:
-                    if len(face.verts) > 4: 
-                        objects_with_ngons.add(obj) 
-                        # self.setVisData(obj.name,poly.index) 
+                    if len(face.verts) > 4:
+                        objects_with_ngons.add(obj)
+                        # self.setVisData(obj.name,poly.index)
 
         if len(objects_with_ngons) > 0:
             self.setFailedInfo(
@@ -318,7 +347,7 @@ class NoNgons(Test):
                 f"The following meshes - {', '.join([obj.name for obj in objects_with_ngons])} - have N-gons.\n\n"
                 f"N-gons (for N > 4 :)) are faces with more then 4 vertices. N-gon faces make it hard to edit the mesh, "
                 f"may deform incorrectly during animation, will cause shading issues unless co-planar, "
-                f"and don't play well with subdivision modifier. Stay quad!"
+                f"and don't play well with subdivision modifier. Stay quad!",
             )
             self.setState(TestState.ERROR)
 
@@ -328,9 +357,9 @@ class NoCrazySubdivision(Test):
     label = "No crazy subdivision level"
     homeworks = get_all_student_work_batteries()
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        objects_with_high_subdivision = [] 
+        objects_with_high_subdivision = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             for mod in obj.modifiers:
                 if isinstance(mod, bpy.types.SubsurfModifier):
@@ -342,18 +371,19 @@ class NoCrazySubdivision(Test):
                 None,
                 f"The following objects - {', '.join([obj.name for obj in objects_with_high_subdivision])} - have really high subdivision.\n\n"
                 f"It is almost definitely unnecessary to have this high subdivision level. Are you trying to make something look smooth? "
-                f"Have you tried right click -> shade smooth? That might do what you are trying to do."
+                f"Have you tried right click -> shade smooth? That might do what you are trying to do.",
             )
             self.setState(TestState.WARNING)
+
 
 @register_test
 class RenderSubdivisionNotLessThenViewport(Test):
     label = "Render subdivision not less then viewport"
     homeworks = get_all_student_work_batteries()
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        objects_with_incorrect_subdivision = [] 
+        objects_with_incorrect_subdivision = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             for mod in obj.modifiers:
                 if isinstance(mod, bpy.types.SubsurfModifier):
@@ -364,7 +394,7 @@ class RenderSubdivisionNotLessThenViewport(Test):
             self.setFailedInfo(
                 None,
                 f"The following objects - {', '.join([obj.name for obj in objects_with_incorrect_subdivision])} - have viewport subdivision level higher then render subdivision level.\n\n"
-                f"This does not make sense. It will take more resources during working in the viewport, and look lower quality in the render."
+                f"This does not make sense. It will take more resources during working in the viewport, and look lower quality in the render.",
             )
             self.setState(TestState.ERROR)
 
@@ -379,14 +409,14 @@ class NoMaterialsWithoutNodes(Test):
         nodeless_materials = []
         for mat in utils.filter_used_datablocks(bpy.data.materials):
             if not mat.use_nodes:
-                if mat.name == "Dots Stroke": # ignore weird inbuild material
+                if mat.name == "Dots Stroke":  # ignore weird inbuild material
                     continue
                 nodeless_materials.append(mat)
         if len(nodeless_materials) > 0:
             self.setFailedInfo(
                 None,
                 f"The following materials - {', '.join([obj.name for obj in nodeless_materials])} - don't use nodes. Such materials are basically deprecated Blender.\n\n"
-                f"Please use only materials with nodes."
+                f"Please use only materials with nodes.",
             )
             self.setState(TestState.ERROR)
 
@@ -396,24 +426,23 @@ class NoUnreallisticMetallness(Test):
     label = "No unreallistic metallness"
     homeworks = []
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        hausler_alloys = [] 
+        hausler_alloys = []
         for material in utils.filter_used_datablocks(bpy.data.materials):
             if material.use_nodes:
                 for node in material.node_tree.nodes:
-                    if node.type == 'BSDF_PRINCIPLED':
-                        metallic_value = node.inputs['Metallic'].default_value
+                    if node.type == "BSDF_PRINCIPLED":
+                        metallic_value = node.inputs["Metallic"].default_value
                         if not (metallic_value < 0.01 or metallic_value > 0.99):
                             hausler_alloys.append(material)
-                            
 
         if len(hausler_alloys) > 0:
             self.setFailedInfo(
                 None,
                 f"The following materials - {', '.join([obj.name for obj in hausler_alloys])} - use metalness values between 0 and 1.\n\n"
                 f"Such materials are not based on realistic properties - there are not many 'half-metals' in this world. "
-                f"Please, set up reallistic materials - either metals or non-metals."
+                f"Please, set up reallistic materials - either metals or non-metals.",
             )
             self.setState(TestState.ERROR)
 
@@ -421,13 +450,13 @@ class NoUnreallisticMetallness(Test):
 @register_test
 class NoFlatShading(Test):
     label = "No Flat Shading"
-    homeworks = [] # TODO: just the chair homework
+    homeworks = []  # TODO: just the chair homework
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        flat_shaded_objects = [] 
+        flat_shaded_objects = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
-            if obj.type == 'MESH':
+            if obj.type == "MESH":
                 flat_shaded = all(not poly.use_smooth for poly in obj.data.polygons)
                 if flat_shaded:
                     flat_shaded_objects.append(obj)
@@ -437,25 +466,32 @@ class NoFlatShading(Test):
                 None,
                 f"The following objects - {', '.join([obj.name for obj in flat_shaded_objects])} - use flat shading on one or more faces.\n\n"
                 f"This style of modelling calls for using smooth shading only. Flat shading will be visible in render. "
-                f"If you are trying to use flat shading on purpose, you can probably achieve the same results using weighted normals modifier."
+                f"If you are trying to use flat shading on purpose, you can probably achieve the same results using weighted normals modifier.",
             )
             self.setState(TestState.WARNING)
+
 
 @register_test
 class NoSingleMeshObject(Test):
     label = "No Single Mesh Object"
-    homeworks = [] #TODO: just the chair homework
+    homeworks = []  # TODO: just the chair homework
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        if len(utils.filter_used_datablocks(obj for obj in bpy.data.objects if obj.type == 'MESH')) <= 1:
+        if (
+            len(
+                utils.filter_used_datablocks(
+                    obj for obj in bpy.data.objects if obj.type == "MESH"
+                )
+            )
+            <= 1
+        ):
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
                 f"This style of modelling calls for assembling the mesh from smaller parts. "
-                f"Do not build you model as a singular mesh, instead, model each part as a separate object. "
+                f"Do not build you model as a singular mesh, instead, model each part as a separate object. ",
             )
-
 
 
 @register_test
@@ -463,18 +499,21 @@ class ReferencesPresent(Test):
     label = "References Present"
     homeworks = []
 
-    def execute(self,context):
+    def execute(self, context):
         self.setState(TestState.OK)
-        reference_images = utils.filter_used_datablocks(obj for obj in bpy.data.objects if 'reference' in obj.name.lower())
+        reference_images = utils.filter_used_datablocks(
+            obj for obj in bpy.data.objects if "reference" in obj.name.lower()
+        )
 
         if len(reference_images) < 2:
             self.setFailedInfo(
                 None,
                 f"You need to use at least two references in this scene. We recommend using front and side references. "
-                f"Mark your references by including the word 'reference' in the name of the object that houses the image. "
+                f"Mark your references by including the word 'reference' in the name of the object that houses the image. ",
             )
             self.setState(TestState.ERROR)
-        
+
+
 @register_test
 class PackedImages(Test):
     label = "Packed Images"
@@ -482,12 +521,16 @@ class PackedImages(Test):
 
     def execute(self, context):
         self.setState(TestState.OK)
-        unpacked_images = utils.filter_used_datablocks(img for img in bpy.data.images if img.packed_file is None and img.name != "Render Result")
+        unpacked_images = utils.filter_used_datablocks(
+            img
+            for img in bpy.data.images
+            if img.packed_file is None and img.name != "Render Result"
+        )
         if len(unpacked_images) > 0:
             self.setFailedInfo(
                 None,
                 f"The following images are not packed - {', '.join([obj.name for obj in unpacked_images])} - please pack your resources for easier review process.\n\n"
-                f"Go to File -> External Data -> Pack Resources (or Automatically Pack Resources)."
+                f"Go to File -> External Data -> Pack Resources (or Automatically Pack Resources).",
             )
             self.setState(TestState.ERROR)
 
@@ -495,16 +538,17 @@ class PackedImages(Test):
 @register_test
 class UseCycles(Test):
     label = "Use Cycles"
-    homeworks = [] # only the material one
+    homeworks = []  # only the material one
 
     def execute(self, context):
         self.setState(TestState.OK)
-        if context.scene.render.engine != 'CYCLES':
+        if context.scene.render.engine != "CYCLES":
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
-                f"Use Cycles rendering engine. More complex materials don't work in {context.scene.render.engine} out-of-the-box."
+                f"Use Cycles rendering engine. More complex materials don't work in {context.scene.render.engine} out-of-the-box.",
             )
+
 
 @register_test
 class UseGPU(Test):
@@ -512,13 +556,22 @@ class UseGPU(Test):
     homeworks = get_all_student_work_batteries()
 
     def is_applicable(self, context):
-        return context.scene.render.engine == 'CYCLES' 
+        return context.scene.render.engine == "CYCLES"
 
     def execute(self, context):
         self.setState(TestState.OK)
-        has_gpu = len(bpy.context.preferences.addons.data.addons['cycles'].preferences['devices']) > 1 # assuming that if a computer has more then 1 device, it's a GPU
-        render_using_gpu = context.scene.cycles.device != 'GPU'
-        set_compute_device = bpy.context.preferences.addons.data.addons['cycles'].preferences['compute_device_type']  
+        has_gpu = (
+            len(
+                bpy.context.preferences.addons.data.addons["cycles"].preferences[
+                    "devices"
+                ]
+            )
+            > 1
+        )  # assuming that if a computer has more then 1 device, it's a GPU
+        render_using_gpu = context.scene.cycles.device != "GPU"
+        set_compute_device = bpy.context.preferences.addons.data.addons[
+            "cycles"
+        ].preferences["compute_device_type"]
         if has_gpu and not (render_using_gpu and set_compute_device):
             self.setState(TestState.WARNING)
             self.setFailedInfo(
@@ -527,7 +580,7 @@ class UseGPU(Test):
                 f"In render properties, make sure Device is set to GPU Compute. "
                 f"In Preferences -> System -> Cycles Render Devices, make sure you have appropriate device type selected (probably CUDA or OptiX). "
                 f"Ignore this warning if you empirically observed that your CPU is faster (e.g. you have no dedicated GPU), "
-                f"or if Blender tells you that you have no compatible GPUs found."
+                f"or if Blender tells you that you have no compatible GPUs found.",
             )
 
 
@@ -535,7 +588,7 @@ class UseGPU(Test):
 class UseModifiers(Test):
     label = "Use modifiers"
     homeworks = [HomeworkBatteries.HW2]
-    
+
     def execute(self, context):
         self.setState(TestState.OK)
         modifiers = set()
@@ -546,9 +599,9 @@ class UseModifiers(Test):
             self.setState(TestState.WARNING)
             self.setFailedInfo(
                 None,
-                f"We would like you to use some (at least 2) modifiers in this homework. For example, 'Array' or 'Simple Deform' are useful!"
+                f"We would like you to use some (at least 2) modifiers in this homework. For example, 'Array' or 'Simple Deform' are useful!",
             )
-                
+
 
 @register_test
 class UseHW2File(Test):
@@ -557,30 +610,32 @@ class UseHW2File(Test):
 
     def execute(self, context):
         self.setState(TestState.OK)
-        if not context.scene.get('pigeons_hw2_flagpost', False):
+        if not context.scene.get("pigeons_hw2_flagpost", False):
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
-                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby."
+                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
             )
+
 
 @register_test
 class UseLights(Test):
     label = "Use lights"
     homeworks = [HomeworkBatteries.HW2]
-    
+
     def execute(self, context):
         self.setState(TestState.OK)
         lights = set()
         for light in utils.filter_used_datablocks(bpy.data.lights):
             lights.add(light)
-        
+
         if len(lights) < 1:
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
-                f"You need to have lights in your scene, otherwise nothing will be visible on the final renders."
+                f"You need to have lights in your scene, otherwise nothing will be visible on the final renders.",
             )
+
 
 @register_test
 class SaveYourWork(Test):
@@ -589,9 +644,6 @@ class SaveYourWork(Test):
 
     def execute(self, context):
         self.setState(TestState.OK)
-        if bpy.data.filepath == '': # Not saved 
+        if bpy.data.filepath == "":  # Not saved
             self.setState(TestState.ERROR)
-            self.setFailedInfo(
-                None,
-                f"Please save your work to avoid loss of data."
-            )
+            self.setFailedInfo(None, f"Please save your work to avoid loss of data.")

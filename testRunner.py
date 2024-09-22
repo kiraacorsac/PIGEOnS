@@ -1,8 +1,10 @@
 import bpy
 import traceback
 from . import tests
+
 showInfos = []
 TEST_RESULTS_PROPERTY = "pigeons_test_results"
+
 
 def resetTestResults():
     possible_state_count = len(tests.TestState._member_names_)
@@ -16,10 +18,7 @@ class TestRunnerOperator(bpy.types.Operator):
     bl_label = "TestRunnder Operator"
     bl_description = "TestRunnder Operator"
 
-    current_hw : bpy.props.StringProperty(
-        name="Homework to run"
-    )
-
+    current_hw: bpy.props.StringProperty(name="Homework to run")
 
     def execute(self, context):
         currentTests = tests.TEST_REGISTRY[self.current_hw]
@@ -32,7 +31,9 @@ class TestRunnerOperator(bpy.types.Operator):
                 else:
                     test.execute(context)
                 if test.state == tests.TestState.INIT:
-                    raise Exception(f"Test '{test.label}' did not change state, stayed {tests.TestState.INIT.name} after execution.")
+                    raise Exception(
+                        f"Test '{test.label}' did not change state, stayed {tests.TestState.INIT.name} after execution."
+                    )
             except Exception as e:
                 test.state = tests.TestState.CRASH
                 test.traceback = "\n".join(traceback.format_exception(e))
@@ -41,6 +42,4 @@ class TestRunnerOperator(bpy.types.Operator):
         bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
         pigeons_props = context.scene.pigeons
         context.scene.pigeons.updater = not pigeons_props.updater
-        return {'FINISHED'}
-    
-
+        return {"FINISHED"}

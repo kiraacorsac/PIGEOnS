@@ -31,6 +31,7 @@ To submit a PR:
 - Describe how your PR is making this software better 
 - Make sure the extension builds
 - Create descriptive commits
+- Use black formatter (prefferably, use VS Code with `ms-python.black-formatter` extension)
 - Observe the code style (fixes and enhancments welcomed)
 
 For development, use [Blender Development VS Code extension](https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development).
