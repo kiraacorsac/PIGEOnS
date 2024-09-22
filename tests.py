@@ -581,3 +581,17 @@ class UseLights(Test):
                 None,
                 f"You need to have lights in your scene, otherwise nothing will be visible on the final renders."
             )
+
+@register_test
+class SaveYourWork(Test):
+    label = "Save your work"
+    homeworks = get_all_student_work_batteries()
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if bpy.data.filepath == '': # Not saved 
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Please save your work to avoid loss of data."
+            )
