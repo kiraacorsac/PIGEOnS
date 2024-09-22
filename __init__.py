@@ -1,15 +1,3 @@
-bl_info = {
-    "name": "Custom addon2",
-    "author": "KiraaCorsac, Dusan, @CCArtStuff",
-    "version": (1, 0),
-    "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > New Object",
-    "description": "Adds something",
-    "warning": "",
-    "doc_url": "",
-    "category": "Add Mesh",
-}
-
 import bpy
 
 from .tests import TEST_REGISTRY
@@ -31,23 +19,26 @@ def register():
     for cls in _classes:
         register_class(cls)
 
+    _dynamicOperators = []
     for hw_id,tests in TEST_REGISTRY.items():
         for i in range(len(tests)):
-            dymOp = create_traceback_operator(hw_id,i)
-            register_class(dymOp)
-            _dynamicOperators.append(dymOp)
-            dymOp = create_show_details_operator(hw_id,i)
-            register_class(dymOp)
-            _dynamicOperators.append(dymOp)
-            dymOp = create_visualisation_operator(hw_id,i)
-            register_class(dymOp)
-            _dynamicOperators.append(dymOp)
+            dynamic_operator = create_traceback_operator(hw_id,i)
+            _dynamicOperators.append(dynamic_operator)
+            dynamic_operator = create_show_details_operator(hw_id,i)
+            _dynamicOperators.append(dynamic_operator)
+            dynamic_operator = create_visualisation_operator(hw_id,i)
+            _dynamicOperators.append(dynamic_operator)
             showInfos.append(False)
+    
+    for cls in _dynamicOperators: 
+        register_class(cls)
+
     bpy.types.Scene.pigeons = bpy.props.PointerProperty(type=PigeonProperties)
     utils.loadImages()
 
 
 def unregister():
-    for cls in _classes:
+    for cls in reversed([*_classes, *_dynamicOperators]):
         unregister_class(cls)
+
     del bpy.types.Scene.pigeons
