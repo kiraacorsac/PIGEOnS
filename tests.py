@@ -560,18 +560,11 @@ class UseGPU(Test):
 
     def execute(self, context):
         self.setState(TestState.OK)
-        has_gpu = (
-            len(
-                bpy.context.preferences.addons.data.addons["cycles"].preferences[
-                    "devices"
-                ]
-            )
-            > 1
-        )  # assuming that if a computer has more then 1 device, it's a GPU
-        render_using_gpu = context.scene.cycles.device != "GPU"
-        set_compute_device = bpy.context.preferences.addons.data.addons[
-            "cycles"
-        ].preferences["compute_device_type"]
+        cycles = bpy.context.preferences.addons.data.addons["cycles"]
+        # assuming that if a computer has more then 1 device, it's a GPU
+        has_gpu = len(cycles.preferences.devices) > 1
+        render_using_gpu = context.scene.cycles.device == "GPU"
+        set_compute_device = cycles.preferences.compute_device_type != "NONE"
         if has_gpu and not (render_using_gpu and set_compute_device):
             self.setState(TestState.WARNING)
             self.setFailedInfo(
