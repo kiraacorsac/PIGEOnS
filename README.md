@@ -44,7 +44,7 @@ BLENDER_PATH="C:/Program Files/Blender Foundation/Blender 4.2/blender.exe"
 Ensure correct development environment
 ```
 python -m venv venv
-./venv/Script/activate
+./venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
