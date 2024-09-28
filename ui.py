@@ -96,24 +96,24 @@ class RunTestsPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         released_version = updates.check_released_version()
+        row = layout.row(align=True)
         if updates.version is None or released_version is None:
-            row = layout.row()
             row.alert = True
             row.label(
                 text="Unable to check for updates. Check manually using the preferences panel."
             )
         elif released_version > updates.version:
+            row.alert = True
+            row.label(text="New version of PIGEOnS is available.")
             row = layout.row()
             row.alert = True
-            row.label(text="New version of PIGEO'n'S is available.")
+            row.label(text=f"Released: {released_version}, yours: {updates.version}")
             row = layout.row()
             row.alert = True
             row.label(text="Update using the preferences panel.")
         else:
-            row = layout.row()
-            row.label(
-                text=f"It's OK! Released: {released_version}, yours: {updates.version}"
-            )
+            row.label(text=f"PIGEOnS are up to date (v{'.'.join(updates.version)})")
+        row = layout.row(align=True)
         scene = context.scene
         pigeons = scene.pigeons
         row = layout.row()
