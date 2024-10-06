@@ -22,7 +22,8 @@ class HomeworkBatteryInfo:
 
 class HomeworkBatteries:
     HW2 = HomeworkBatteryInfo("Homework 2 - Composition", 20)
-    # HW3 = HomeworkBatteryInfo("Homework 3")
+    HW3chair = HomeworkBatteryInfo("Homework 3 - Chair")
+    HW3your = HomeworkBatteryInfo("Homework 3 - Your own model")
     # HW4 = HomeworkBatteryInfo("Homework 4")
     # HW5 = HomeworkBatteryInfo("Homework 5")
     # HW6 = HomeworkBatteryInfo("Homework 6")
@@ -195,7 +196,7 @@ class Skip_Test(Test):
 @register_test
 class NoDefaultName(Test):
     label = "No default names"
-    homeworks = []
+    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
 
     def execute(self, context):
         def is_default_name(obj_name: str, default_name: str):
@@ -290,7 +291,7 @@ class NoEmptyMaterialSlotsSet(Test):
 @register_test
 class NoTris(Test):
     label = "No triangles"
-    homeworks = []
+    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self, context):
@@ -323,7 +324,7 @@ class NoTris(Test):
 @register_test
 class NoNgons(Test):
     label = "No N-gons"
-    homeworks = []
+    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self, context):
@@ -450,7 +451,7 @@ class NoUnreallisticMetallness(Test):
 @register_test
 class NoFlatShading(Test):
     label = "No Flat Shading"
-    homeworks = []  # TODO: just the chair homework
+    homeworks = [HomeworkBatteries.HW3chair]
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -465,7 +466,7 @@ class NoFlatShading(Test):
             self.setFailedInfo(
                 None,
                 f"The following objects - {', '.join([obj.name for obj in flat_shaded_objects])} - use flat shading on one or more faces.\n\n"
-                f"This style of modelling calls for using smooth shading only. Flat shading will be visible in render. "
+                f"The style of modelling requested in the homework calls for using smooth shading only. Flat shading will be visible in render. "
                 f"If you are trying to use flat shading on purpose, you can probably achieve the same results using weighted normals modifier.",
             )
             self.setState(TestState.WARNING)
@@ -474,7 +475,9 @@ class NoFlatShading(Test):
 @register_test
 class NoSingleMeshObject(Test):
     label = "No Single Mesh Object"
-    homeworks = []  # TODO: just the chair homework
+    homeworks = [
+        HomeworkBatteries.HW3chair,
+    ]
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -497,7 +500,7 @@ class NoSingleMeshObject(Test):
 @register_test
 class ReferencesPresent(Test):
     label = "References Present"
-    homeworks = []
+    homeworks = [HomeworkBatteries.HW3your]
 
     def execute(self, context):
         self.setState(TestState.OK)
