@@ -601,6 +601,43 @@ class UseModifiers(Test):
 
 
 @register_test
+class UseBevelOrSubdivModifiers(Test):
+    label = "Use modifiers"
+    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        modifiers = set()
+        for obj in utils.filter_used_datablocks(bpy.data.objects):
+            for mod in obj.modifiers:
+                if isinstance(mod, bpy.types.SubsurfModifier) or isinstance(
+                    mod, bpy.types.BevelModifier
+                ):
+                    modifiers.add(mod)
+        if len(modifiers) < 1:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"We would like you to use modifiers to create holding edges for objects in this homework. 'Subdivision Surface' or 'Bevel' can work!",
+            )
+
+
+@register_test
+class UseHW3ChairFile(Test):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW3chair]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get("pigeons_hw3chair_flagpost", False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
+            )
+
+
+@register_test
 class UseHW2File(Test):
     label = "Use starting file"
     homeworks = [HomeworkBatteries.HW2]
