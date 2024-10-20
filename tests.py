@@ -23,8 +23,8 @@ class HomeworkBatteryInfo:
 class HomeworkBatteries:
     HW2 = HomeworkBatteryInfo("Homework 2 - Composition", 20)
     HW3chair = HomeworkBatteryInfo("Homework 3 - Chair", 30)
-    HW3your = HomeworkBatteryInfo("Homework 3 - Your own model",31)
-    # HW4 = HomeworkBatteryInfo("Homework 4")
+    HW3your = HomeworkBatteryInfo("Homework 3 - Your own model", 31)
+    HW4 = HomeworkBatteryInfo("Homework 4 - Retopology")
     # HW5 = HomeworkBatteryInfo("Homework 5")
     # HW6 = HomeworkBatteryInfo("Homework 6")
     # HW7 = HomeworkBatteryInfo("Homework 7")
@@ -291,7 +291,11 @@ class NoEmptyMaterialSlotsSet(Test):
 @register_test
 class NoTris(Test):
     label = "No triangles"
-    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
+    homeworks = [
+        HomeworkBatteries.HW3chair,
+        HomeworkBatteries.HW3your,
+        HomeworkBatteries.HW4,
+    ]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self, context):
@@ -324,7 +328,11 @@ class NoTris(Test):
 @register_test
 class NoNgons(Test):
     label = "No N-gons"
-    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
+    homeworks = [
+        HomeworkBatteries.HW3chair,
+        HomeworkBatteries.HW3your,
+        HomeworkBatteries.HW4,
+    ]
     # visType = VIS_TYPE.POLYGON
 
     def execute(self, context):
@@ -451,7 +459,7 @@ class NoUnreallisticMetallness(Test):
 @register_test
 class NoFlatShading(Test):
     label = "No Flat Shading"
-    homeworks = [HomeworkBatteries.HW3chair]
+    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW4]
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -603,7 +611,11 @@ class UseModifiers(Test):
 @register_test
 class UseBevelOrSubdivModifiers(Test):
     label = "Use modifiers"
-    homeworks = [HomeworkBatteries.HW3chair, HomeworkBatteries.HW3your]
+    homeworks = [
+        HomeworkBatteries.HW3chair,
+        HomeworkBatteries.HW3your,
+        HomeworkBatteries.HW4,
+    ]
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -630,6 +642,21 @@ class UseHW3ChairFile(Test):
     def execute(self, context):
         self.setState(TestState.OK)
         if not context.scene.get("pigeons_hw3chair_flagpost", False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
+            )
+
+
+@register_test
+class UseHW4File(Test):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW4]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get("pigeons_hw4_flagpost", False):
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
