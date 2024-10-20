@@ -24,7 +24,7 @@ class HomeworkBatteries:
     HW2 = HomeworkBatteryInfo("Homework 2 - Composition", 20)
     HW3chair = HomeworkBatteryInfo("Homework 3 - Chair", 30)
     HW3your = HomeworkBatteryInfo("Homework 3 - Your own model", 31)
-    HW4 = HomeworkBatteryInfo("Homework 4 - Retopology")
+    HW4 = HomeworkBatteryInfo("Homework 4 - Retopology", 40)
     # HW5 = HomeworkBatteryInfo("Homework 5")
     # HW6 = HomeworkBatteryInfo("Homework 6")
     # HW7 = HomeworkBatteryInfo("Homework 7")
