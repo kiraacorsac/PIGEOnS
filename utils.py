@@ -9,6 +9,7 @@ import subprocess
 
 import functools
 import time
+import typing
 
 
 def copy_to_clipboard(string: str) -> None:
@@ -36,10 +37,15 @@ def loadImages():
         )
 
 
-def filter_used_datablocks(datablocks: list[bpy.types.ID]):
+ID_Type = typing.TypeVar("ID_Type", bound=bpy.types.ID)
+
+
+def filter_used_datablocks(
+    datablocks: typing.Iterable[ID_Type],
+) -> typing.List[ID_Type]:
     return list(
         filter(lambda d: d.users > 0, datablocks)
-    )  # materialize becuase we need len() almost always
+    )  # materialize because we need len() almost always
 
 
 def time_cache(max_age, maxsize=128, typed=False):

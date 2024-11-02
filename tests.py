@@ -108,14 +108,13 @@ class Test:
         v = VisData()
         v.objectName = objectName
         v.dataID = dataID
-        v.method = self.visType
         self.visData = v
 
     def setState(self, state):
         self.state = state
 
 
-def register_test(test: type(Test)):
+def register_test(test: typing.Type[Test]):
     testInst = test()
     for hw_battery in testInst.homeworks:
         global TEST_REGISTRY
@@ -204,7 +203,7 @@ class NoDefaultName(Test):
 
         self.setState(TestState.OK)
 
-        forbidden_names = [
+        forbidden_names: list[tuple[typing.Iterable[bpy.types.ID], list[str]]] = [
             (
                 bpy.data.objects,
                 [
@@ -303,7 +302,12 @@ class NoTris(Test):
         objects_with_triangles = set()
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             if obj.type == "MESH":
-                if bpy.context.object == obj and bpy.context.object.mode == "EDIT":
+                assert isinstance(obj.data, bpy.types.Mesh)
+                if (
+                    bpy.context.object is not None
+                    and bpy.context.object == obj
+                    and bpy.context.object.mode == "EDIT"
+                ):
                     mesh = bmesh.from_edit_mesh(obj.data)
                 else:
                     mesh = bmesh.new()
@@ -339,7 +343,12 @@ class NoNgons(Test):
         objects_with_ngons = set()
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             if obj.type == "MESH":
-                if bpy.context.object == obj and bpy.context.object.mode == "EDIT":
+                assert isinstance(obj.data, bpy.types.Mesh)
+                if (
+                    bpy.context.object is not None
+                    and bpy.context.object == obj
+                    and bpy.context.object.mode == "EDIT"
+                ):
                     mesh = bmesh.from_edit_mesh(obj.data)
                 else:
                     mesh = bmesh.new()
@@ -439,6 +448,7 @@ class NoUnreallisticMetallness(Test):
         hausler_alloys = []
         for material in utils.filter_used_datablocks(bpy.data.materials):
             if material.use_nodes:
+                assert material.node_tree is not None
                 for node in material.node_tree.nodes:
                     if node.type == "BSDF_PRINCIPLED":
                         metallic_value = node.inputs["Metallic"].default_value
@@ -465,6 +475,7 @@ class NoFlatShading(Test):
         flat_shaded_objects = []
         for obj in utils.filter_used_datablocks(bpy.data.objects):
             if obj.type == "MESH":
+                assert isinstance(obj.data, bpy.types.Mesh)
                 flat_shaded = all(not poly.use_smooth for poly in obj.data.polygons)
                 if flat_shaded:
                     flat_shaded_objects.append(obj)
