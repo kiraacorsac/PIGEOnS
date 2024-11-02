@@ -3,3 +3,8 @@
 __pycache__
 venv
 .env
+
+# build artifacts
+pigeons-*.zip
+index.html
+index.json
