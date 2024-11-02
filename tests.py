@@ -2,6 +2,7 @@ import typing
 import bpy
 import bmesh
 import math
+import mathutils
 from enum import Enum
 from . import utils
 from .testVisualisation import selectPolygon, VIS_TYPE
@@ -441,7 +442,7 @@ class NoMaterialsWithoutNodes(Test):
 @register_test
 class NoUnreallisticMetallness(Test):
     label = "No unreallistic metallness"
-    homeworks = []
+    homeworks = [HomeworkBatteries.HW5]
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -560,7 +561,7 @@ class PackedImages(Test):
 @register_test
 class UseCycles(Test):
     label = "Use Cycles"
-    homeworks = []  # only the material one
+    homeworks = [HomeworkBatteries.HW5]  # only the material one
 
     def execute(self, context):
         self.setState(TestState.OK)
@@ -568,7 +569,7 @@ class UseCycles(Test):
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
-                f"Use Cycles rendering engine. More complex materials don't work in {context.scene.render.engine} out-of-the-box.",
+                f"Use Cycles rendering engine. More complex materials don't work in {context.scene.render.engine} out-of-the-box. Renders with EEVEE are acceptable only if you set it up correctly.",
             )
 
 
@@ -641,6 +642,280 @@ class UseBevelOrSubdivModifiers(Test):
             self.setFailedInfo(
                 None,
                 f"We would like you to use modifiers to create holding edges for objects in this homework. 'Subdivision Surface' or 'Bevel' can work!",
+            )
+
+
+@register_test
+class UnwrapTexturedObjects(Test):
+    label = "Unwrap bear and books"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        bear_objects = utils.filter_used_datablocks(bpy.data.objects)
+        bear_objects = [
+            obj
+            for obj in bear_objects
+            if "bear_" in obj.name.lower() or "book_" in obj.name.lower()
+        ]
+        # for every bear object, check if it has UV map, then check if all UV vertices are in 0,0
+        no_uv_map_objects = set()
+        low_quality_uv_map_objects = set()
+        for obj in bear_objects:
+            if obj.type != "MESH":
+                continue
+            assert isinstance(obj.data, bpy.types.Mesh)
+
+            if obj.mode == "EDIT":
+                bm = bmesh.from_edit_mesh(obj.data)
+            else:
+                bm = bmesh.new()
+                bm.from_mesh(obj.data)
+            uv_layer = bm.loops.layers.uv.verify()
+
+            for face in bm.faces:
+                for loop in face.loops:
+                    if math.isclose(
+                        loop[uv_layer].uv.x, -0.1, abs_tol=0.001
+                    ) or math.isclose(loop[uv_layer].uv.y, -0.1, abs_tol=0.001):
+                        no_uv_map_objects.add(obj)
+
+            for face in bm.faces:
+                for loop in face.loops:
+                    if math.isclose(
+                        loop[uv_layer].uv.x, -0.1, abs_tol=0.001
+                    ) and math.isclose(loop[uv_layer].uv.y, -0.1, abs_tol=0.001):
+                        no_uv_map_objects.add(obj)
+
+            if obj.mode != "EDIT":
+                bm.free()
+
+        no_map_string = f"Objects {', '.join([obj.name for obj in no_uv_map_objects])} are part of the bear, but they don't have any UV map. Please unwrap them."
+        low_quality_uv_map_string = f"Objects {', '.join([obj.name for obj in low_quality_uv_map_objects])} are part of the bear, but their UV map has very high stretch. Please unwrap them better."
+
+        if len(no_uv_map_objects) > 0:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                no_map_string
+                + (
+                    ("\n\n" + low_quality_uv_map_string)
+                    if len(low_quality_uv_map_objects) > 0
+                    else ""
+                ),
+            )
+            return
+        if len(low_quality_uv_map_objects) > 0:
+            self.setState(TestState.WARNING)
+            self.setFailedInfo(None, low_quality_uv_map_string)
+            return
+
+
+@register_test
+class ChristmasTreeLightsEmitLight(Test):
+    label = "Christmas tree lights emit light"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+
+        lights = bpy.data.objects.get("Xmas tree lights", None)
+        if lights is None:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Christmas tree lights should be a separate object named 'Xmas tree lights'.",
+            )
+            return
+
+        # get materials on lights
+        materials = set()
+        for slot in lights.material_slots:
+            if slot.material is not None:
+                materials.add(slot.material)
+
+        emits = False
+        for material in materials:
+            if material.use_nodes:
+                assert material.node_tree is not None
+                for node in material.node_tree.nodes:
+                    if node.type == "EMISSION":
+                        if node.inputs["Strength"].default_value > 1:
+                            emits = True
+                    if node.type == "BSDF_PRINCIPLED":
+                        if node.inputs["Emission Strength"].default_value > 1:
+                            emits = True
+        if not emits:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Christmas tree lights should emit light. Otherwise, they are just a decoration. "
+                f"Use Principled BSDF or dedicated Emission node with Emission Strength > 1.",
+            )
+
+
+@register_test
+class GemIsTransparent(Test):
+    label = "Gem is transparent"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+
+        gem = bpy.data.objects.get("Gem", None)
+        if gem is None:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Gem should be a separate object named 'Gem'.",
+            )
+            return
+
+        materials = set()
+        for slot in gem.material_slots:
+            if slot.material is not None:
+                materials.add(slot.material)
+
+        transparent = False
+        for material in materials:
+            if material.use_nodes:
+                assert material.node_tree is not None
+                for node in material.node_tree.nodes:
+                    if node.type == "BSDF_PRINCIPLED":
+                        if node.inputs["Transmission Weight"].default_value > 0.7 and (
+                            node.inputs["Roughness"].default_value < 0.5
+                            or node.inputs["Roughness"].is_linked
+                        ):
+                            transparent = True
+                    if node.type == "BSDF_GLASS" or node.type == "BSDF_TRANSPARENT":
+                        transparent = True
+        if not transparent:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Gem should be transparent. "
+                f"Use Principled BSDF with Transmission > 0.7 and Roughness < 0.5 or a texture, or mix Glass and Transparent BSDF node.",
+            )
+
+
+@register_test
+class RubiksCubeHas6Colors(Test):
+    label = "Rubik's cube has 6 colors"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+
+        rubiks_cube = bpy.data.objects.get("Rubik's Cube", None)
+        if rubiks_cube is None:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Rubik's Cube should be a separate object named 'Rubik's Cube'.",
+            )
+            return
+
+        materials = set()
+        for slot in rubiks_cube.material_slots:
+            materials.add(slot.material)
+
+        if len(materials) < 6:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Rubik's Cube should have 6 different colors. "
+                f"Each color of the cube should have a different material assigned. "
+                f"Solutions with textures (both procedural and bitmaps) are also acceptable, in that case you can ignore this pigeon.",
+            )
+
+
+@register_test
+class PigBankIsPorcelain(Test):
+    label = "Pig Bank is porcelain"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+
+        pig = bpy.data.objects.get("Pig_bank", None)
+        if pig is None:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Pig Bank should be a separate object named 'Pig_bank'.",
+            )
+            return
+
+        materials = set()
+        for slot in pig.material_slots:
+            if slot.material is not None:
+                materials.add(slot.material)
+
+        porcelain = False
+        for material in materials:
+            if material.use_nodes:
+                assert material.node_tree is not None
+                for node in material.node_tree.nodes:
+                    if node.type == "BSDF_PRINCIPLED":
+                        if node.inputs["Subsurface Weight"].default_value > 0.1 and (
+                            node.inputs["Roughness"].default_value < 0.5
+                            or node.inputs["Roughness"].is_linked
+                        ):
+                            porcelain = True
+        if not porcelain:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Pig should be made of porcelain. "
+                f"Use Principled BSDF with Subsurface > 0.1 and Roughness < 0.5 or a texture."
+                f"Alternative solutions using SSS are also acceptable, in that case you can ignore this pigeon.",
+            )
+
+
+@register_test
+class CoinsAreMetal(Test):
+    label = "Coins are metal"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+
+        coins = set()
+        for obj in bpy.data.objects:
+            if obj.name.startswith("Coin"):
+                coins.add(obj)
+        if len(coins) == 0:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Coins should be separate objects with 'Coin' prefix.",
+            )
+            return
+
+        materials = set()
+        for coin in coins:
+            for slot in coin.material_slots:
+                if slot.material is not None:
+                    materials.add(slot.material)
+
+        metal = False
+        for material in materials:
+            if material.use_nodes:
+                assert material.node_tree is not None
+                for node in material.node_tree.nodes:
+                    if node.type == "BSDF_PRINCIPLED":
+                        if (
+                            node.inputs["Metallic"].default_value > 0.99
+                            or node.inputs["Metallic"].is_linked
+                        ):
+                            metal = True
+        if not metal:
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                f"Coins should be made of metal. "
+                f"Use Principled BSDF with Metallic > 0.99 or an appropriate texture."
+                f"Alternative solutions using glossy shaders are also acceptable, in that case you can ignore this pigeon.",
             )
 
 
