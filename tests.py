@@ -25,7 +25,7 @@ class HomeworkBatteries:
     HW3chair = HomeworkBatteryInfo("Homework 3 - Chair", 30)
     HW3your = HomeworkBatteryInfo("Homework 3 - Your own model", 31)
     HW4 = HomeworkBatteryInfo("Homework 4 - Retopology", 40)
-    # HW5 = HomeworkBatteryInfo("Homework 5")
+    HW5 = HomeworkBatteryInfo("Homework 5 - Materials", 50)
     # HW6 = HomeworkBatteryInfo("Homework 6")
     # HW7 = HomeworkBatteryInfo("Homework 7")
     Showcase_OK = HomeworkBatteryInfo("Showcase - OK", 101)
@@ -634,38 +634,12 @@ class UseBevelOrSubdivModifiers(Test):
             )
 
 
-@register_test
-class UseHW3ChairFile(Test):
-    label = "Use starting file"
-    homeworks = [HomeworkBatteries.HW3chair]
-
-    def execute(self, context):
-        self.setState(TestState.OK)
-        if not context.scene.get("pigeons_hw3chair_flagpost", False):
-            self.setState(TestState.ERROR)
-            self.setFailedInfo(
-                None,
-                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
-            )
+class UseHWFile:
+    error_message = "Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby."
 
 
 @register_test
-class UseHW4File(Test):
-    label = "Use starting file"
-    homeworks = [HomeworkBatteries.HW4]
-
-    def execute(self, context):
-        self.setState(TestState.OK)
-        if not context.scene.get("pigeons_hw4_flagpost", False):
-            self.setState(TestState.ERROR)
-            self.setFailedInfo(
-                None,
-                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
-            )
-
-
-@register_test
-class UseHW2File(Test):
+class UseHW2File(Test, UseHWFile):
     label = "Use starting file"
     homeworks = [HomeworkBatteries.HW2]
 
@@ -675,14 +649,59 @@ class UseHW2File(Test):
             self.setState(TestState.ERROR)
             self.setFailedInfo(
                 None,
-                f"Please use the provided starting file. It's available for download in the IS study materials and the interactive syllaby.",
+                self.error_message,
+            )
+
+
+@register_test
+class UseHW3ChairFile(Test, UseHWFile):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW3chair]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get("pigeons_hw3chair_flagpost", False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                self.error_message,
+            )
+
+
+@register_test
+class UseHW4File(Test, UseHWFile):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW4]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get("pigeons_hw4_flagpost", False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                self.error_message,
+            )
+
+
+@register_test
+class UseHW5File(Test, UseHWFile):
+    label = "Use starting file"
+    homeworks = [HomeworkBatteries.HW5]
+
+    def execute(self, context):
+        self.setState(TestState.OK)
+        if not context.scene.get("pigeons_hw5_flagpost", False):
+            self.setState(TestState.ERROR)
+            self.setFailedInfo(
+                None,
+                self.error_message,
             )
 
 
 @register_test
 class UseLights(Test):
     label = "Use lights"
-    homeworks = [HomeworkBatteries.HW2]
+    homeworks = [HomeworkBatteries.HW2, HomeworkBatteries.HW5]
 
     def execute(self, context):
         self.setState(TestState.OK)
