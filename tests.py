@@ -243,8 +243,7 @@ class NoDefaultName(Test):
 @register_test
 class MaterialsSet(Test):
     label = "No objects without materials"
-    homeworks = [HomeworkBatteries.HW2]
-    # visType = VIS_TYPE.POLYGON
+    homeworks = [HomeworkBatteries.HW2, HomeworkBatteries.HW5]
 
     def execute(self, context):
         self.setState(TestState.OK)
