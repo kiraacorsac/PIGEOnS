@@ -51,4 +51,5 @@ pip install -r requirements.txt
 Build releases with
 ```
 invoke build
+invoke release
 ```
