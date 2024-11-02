@@ -546,8 +546,7 @@ class PackedImages(Test):
         unpacked_images = utils.filter_used_datablocks(
             img
             for img in bpy.data.images
-            if img.packed_file is None
-            and img.name not in ["Render Result", "Viewer Node"]
+            if img.packed_file is None and img.filepath != "" and img.filepath != "//"
         )
         if len(unpacked_images) > 0:
             self.setFailedInfo(
