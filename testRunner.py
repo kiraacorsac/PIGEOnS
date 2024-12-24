@@ -19,10 +19,14 @@ class TestRunnerOperator(bpy.types.Operator):
     bl_description = "TestRunnder Operator"
 
     current_hw: bpy.props.StringProperty(name="Homework to run")
+    output_to_console: bpy.props.BoolProperty(
+        name="Output results to console", default=False
+    )
 
     def execute(self, context):
         currentTests = tests.TEST_REGISTRY[self.current_hw]
-        tests_results = resetTestResults()
+        testsResults = {}
+        tests_results_prop = resetTestResults()
 
         for test in currentTests:
             try:
@@ -37,9 +41,18 @@ class TestRunnerOperator(bpy.types.Operator):
             except Exception as e:
                 test.state = tests.TestState.CRASH
                 test.traceback = "\n".join(traceback.format_exception(e))
-            tests_results[test.state.value] += 1
+            testsResults[test.testId] = {
+                "label": test.label,
+                "state": test.state.name,
+                "datablock": test.failedInfo.dataBlock,
+                "message": test.failedInfo.message,
+                "traceback": test.traceback,
+            }
+            tests_results_prop[test.state.value] += 1
+        if self.output_to_console:
+            print(testsResults)
 
-        bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results
+        bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results_prop
         pigeons_props = context.scene.pigeons
         context.scene.pigeons.updater = not pigeons_props.updater
         return {"FINISHED"}

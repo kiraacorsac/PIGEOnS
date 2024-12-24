@@ -58,6 +58,10 @@ class FailedInfo:
     dataBlock: bpy.props.StringProperty()
     message: bpy.props.StringProperty()
 
+    def __init__(self) -> None:
+        self.dataBlock = ""
+        self.message = ""
+
 
 class VisData:
     method = None
@@ -84,6 +88,11 @@ class Test:
     visData = None
     visType = VIS_TYPE.NONE
     objects = []
+
+    def __init__(self):
+        self.failedInfo = FailedInfo()
+        self.testId = Test.testId
+        Test.testId += 1
 
     def is_applicable(self, context):
         return True
