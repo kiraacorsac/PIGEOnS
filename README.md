@@ -22,6 +22,14 @@ This extension resides in the N-Panel of the 3D Viewport, in the PIGEO'n'S categ
 
 Observe the pigeon to learn about the quality of your homework. 
 
+Alternatively, if PIGEO'n'S can also be used in headless mode from the CLI like this:
+
+```
+python cli.py --hw homework5materials --homework-file C:\Users\KiraaCorsac\Downloads\Shelf.blend
+```
+
+For that, you need to set up an `.env` file. See later section for expected contetnts of the `.env` file
+
 ## Development
 
 You are very welcomed to contribute to development of PIGEO'n'S. We can roll out changes very quickly, so if you help us fix a bug early in the semester, it's likely that students enrolled in the same semester get to see the fix :)
