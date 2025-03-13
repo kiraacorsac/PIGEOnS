@@ -20,6 +20,7 @@ _dynamicOperators = []
 
 def register():
     for cls in _classes:
+        print(cls)
         register_class(cls)
 
     _dynamicOperators = []

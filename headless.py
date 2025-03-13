@@ -1,6 +1,7 @@
 import bpy
 import argparse
 import sys
+from . import
 
 
 class ArgumentParserForBlender(argparse.ArgumentParser):
@@ -61,5 +62,10 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
+    if not args.homework_file.endswith(".blend"):
+        raise ValueError("The homework file must be a .blend file")
+    if bpy.ops.pigeons.test_runner_operator is None:
+        raise ValueError("The test runner operator is not registered, make sure the addon is enabled")
+    
     bpy.ops.wm.open_mainfile(filepath=args.homework_file)
     bpy.ops.pigeons.test_runner_operator(current_hw=args.hw, output_to_console=True)
