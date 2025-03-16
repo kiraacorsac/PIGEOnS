@@ -1,7 +1,6 @@
 import bpy
 import argparse
 import sys
-from . import
 
 
 class ArgumentParserForBlender(argparse.ArgumentParser):
@@ -57,6 +56,19 @@ parser.add_argument(
     help="The file containing the homework",
     required=True,
 )
+parser.add_argument(
+    "--output-to-console",
+    action="store_true",
+    help="Output results to console",
+)
+
+parser.add_argument(
+    "--output-to-file",
+    type=str,
+    default="",
+    help="Output results to a file",
+)
+
 
 args = parser.parse_args()
 
@@ -65,7 +77,13 @@ if __name__ == "__main__":
     if not args.homework_file.endswith(".blend"):
         raise ValueError("The homework file must be a .blend file")
     if bpy.ops.pigeons.test_runner_operator is None:
-        raise ValueError("The test runner operator is not registered, make sure the addon is enabled")
-    
+        raise ValueError(
+            "The test runner operator is not registered, make sure the addon is enabled"
+        )
+
     bpy.ops.wm.open_mainfile(filepath=args.homework_file)
-    bpy.ops.pigeons.test_runner_operator(current_hw=args.hw, output_to_console=True)
+    bpy.ops.pigeons.test_runner_operator(
+        current_hw=args.hw,
+        output_to_console=args.output_to_console,
+        output_to_file=args.output_to_file,
+    )

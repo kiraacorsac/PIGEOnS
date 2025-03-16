@@ -1,5 +1,6 @@
 import bpy
 import traceback
+import json
 from . import tests
 
 showInfos = []
@@ -22,6 +23,7 @@ class TestRunnerOperator(bpy.types.Operator):
     output_to_console: bpy.props.BoolProperty(
         name="Output results to console", default=False
     )
+    output_to_file: bpy.props.StringProperty(name="Path to a output log file")
 
     def execute(self, context):
         currentTests = tests.TEST_REGISTRY[self.current_hw]
@@ -49,8 +51,15 @@ class TestRunnerOperator(bpy.types.Operator):
                 "traceback": test.traceback,
             }
             tests_results_prop[test.state.value] += 1
+        if self.output_to_file:
+            try:
+                with open(self.output_to_file, "w") as file:
+                    json.dump(testsResults, file)
+            except IOError as e:
+                self.report({"ERROR"}, f"Failed to write an output file: {e}")
+
         if self.output_to_console:
-            print(testsResults)
+            print(json.dumps(testsResults))
 
         bpy.context.scene[TEST_RESULTS_PROPERTY] = tests_results_prop
         pigeons_props = context.scene.pigeons
