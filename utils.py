@@ -31,18 +31,19 @@ def loadImages():
     relative_dir = pathlib.Path(os.path.dirname(__file__)) / "imgs"
 
     for pigeon in pigeon_names:
-        pigoen_filename = f"{pigeon}{image_format}"
+        pigeon_filename = f"{pigeon}{image_format}"
         pigeon_collection.load(
-            pigeon.upper(), str(relative_dir / pigoen_filename), "IMAGE"
+            pigeon.upper(), str(relative_dir / pigeon_filename), "IMAGE"
         )
 
 
-ID_Type = typing.TypeVar("ID_Type", bound=bpy.types.ID)
+def unloadImages():
+    bpy.utils.previews.remove(pigeon_collection)
 
 
 def filter_used_datablocks(
-    datablocks: typing.Iterable[ID_Type],
-) -> typing.List[ID_Type]:
+    datablocks: typing.Iterable[bpy.types.ID],
+) -> typing.List[bpy.types.ID]:
     return list(
         filter(lambda d: d.users > 0, datablocks)
     )  # materialize because we need len() almost always
